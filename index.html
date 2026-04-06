@@ -483,8 +483,11 @@ async function loadTasks(){
 
 async function insertTask(t){
   const row=taskToRow(t);
+  console.log('Supabase insert row:', row);
   const{data,error}=await sb.from('tasks').insert(row).select();
-  if(error){console.error('Insert task error:',error);toast('Erreur création tâche');return null}
+  console.log('Supabase data:', data);
+  console.log('Supabase error:', error);
+  if(error){toast('Erreur création tâche');return null}
   if(data&&data[0])t.id=String(data[0].id);
   return t;
 }
