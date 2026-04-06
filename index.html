@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TaskFlow — Organisateur personnel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#0f0f0f;--side:#1a1a1a;--surf:#1e1e1e;--surf2:#262626;--surf3:#2f2f2f;
@@ -406,17 +407,19 @@ button,input,textarea,select{font-family:inherit}
 <div class="toast-box" id="toasts"></div>
 
 <script>
-/* ═══ STORAGE ═══ */
-const LS=k=>{try{const d=localStorage.getItem(k);return d?JSON.parse(d):null}catch{return null}};
-const SS=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
-let tasks=LS('tf2-tasks')||[];
-let habits=LS('tf2-habits')||[
-  {name:'Sport',checks:{}},{name:'Lecture',checks:{}},{name:'Méditation',checks:{}}
-];
+/* ═══════════════════════════════════════════
+   SUPABASE INIT
+   ═══════════════════════════════════════════ */
+const SUPABASE_URL='https://byigvrfltmqmmwylsmmi.supabase.co';
+const SUPABASE_KEY='sb_publishable_NlPe78o7ymxyj0O6mp9e0g_6iXQjBQ_';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let tasks=[];
+let habits=[];
 let fCat='all',fPrio='all',calOff=0,calView='week',dragId=null;
+let _loading=true;
 
 const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const PO={critique:0,haute:1,moyenne:2,moderee:3,basse:4};
 const PL={critique:'Critique',haute:'Haute',moyenne:'Moyenne',moderee:'Modérée',basse:'Basse'};
 const PN={critique:5,haute:4,moyenne:3,moderee:2,basse:1};
@@ -424,39 +427,168 @@ const CL={travail:'Travail',personnel:'Personnel',sante:'Santé',urgent:'Urgent'
 const EL={do:'Faire maintenant',plan:'Planifier',delegate:'Déléguer',eliminate:'Éliminer'};
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MOIS=['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-
-function persist(){SS('tf2-tasks',tasks);SS('tf2-habits',habits)}
 function dk(d){return d.toISOString().slice(0,10)}
 function filt(){return tasks.filter(t=>(fCat==='all'||t.cat===fCat)&&(fPrio==='all'||t.prio===fPrio))}
 
-/* ═══ THEME ═══ */
-let theme=LS('tf2-theme')||'dark';
+/* ═══════════════════════════════════════════
+   SUPABASE ↔ APP MAPPING
+   Supabase tasks: id, title, completed, quadrant, due_date, priority
+   App tasks: id, title, desc, cat, prio, dur, due, status, eq, calDay, calHour
+   ═══════════════════════════════════════════ */
+function rowToTask(r){
+  return {
+    id:String(r.id),
+    title:r.title||'',
+    desc:r.description||'',
+    cat:r.category||'travail',
+    prio:r.priority||'moyenne',
+    dur:r.duration||'',
+    due:r.due_date||'',
+    status:r.completed?'done':(r.status||'todo'),
+    eq:r.quadrant||'plan',
+    calDay:r.cal_day||null,
+    calHour:r.cal_hour||null
+  }
+}
+function taskToRow(t){
+  return {
+    title:t.title,
+    description:t.desc||'',
+    category:t.cat||'travail',
+    priority:t.prio||'moyenne',
+    duration:t.dur||'',
+    due_date:t.due||null,
+    completed:t.status==='done',
+    status:t.status||'todo',
+    quadrant:t.eq||'plan',
+    cal_day:t.calDay||null,
+    cal_hour:t.calHour||null
+  }
+}
+function rowToHabit(r){
+  return {id:String(r.id),name:r.name||'',checks:r.completions||{}}
+}
+function habitToRow(h){
+  return {name:h.name,completions:h.checks||{}}
+}
+
+/* ═══════════════════════════════════════════
+   SUPABASE CRUD — TASKS
+   ═══════════════════════════════════════════ */
+async function loadTasks(){
+  const{data,error}=await sb.from('tasks').select('*').order('id',{ascending:true});
+  if(error){console.error('Load tasks error:',error);toast('Erreur chargement tâches');return}
+  tasks=(data||[]).map(rowToTask);
+}
+
+async function insertTask(t){
+  const row=taskToRow(t);
+  const{data,error}=await sb.from('tasks').insert(row).select();
+  if(error){console.error('Insert task error:',error);toast('Erreur création tâche');return null}
+  if(data&&data[0])t.id=String(data[0].id);
+  return t;
+}
+
+async function updateTask(t){
+  const row=taskToRow(t);
+  const{error}=await sb.from('tasks').update(row).eq('id',Number(t.id));
+  if(error)console.error('Update task error:',error);
+}
+
+async function deleteTask(id){
+  const{error}=await sb.from('tasks').delete().eq('id',Number(id));
+  if(error)console.error('Delete task error:',error);
+}
+
+/* ═══════════════════════════════════════════
+   SUPABASE CRUD — HABITS
+   ═══════════════════════════════════════════ */
+async function loadHabits(){
+  const{data,error}=await sb.from('habits').select('*').order('id',{ascending:true});
+  if(error){console.error('Load habits error:',error);toast('Erreur chargement habitudes');return}
+  habits=(data||[]).map(rowToHabit);
+  if(habits.length===0){
+    // Seed default habits
+    for(const name of['Sport','Lecture','Méditation']){
+      const{data:d}=await sb.from('habits').insert({name,completions:{}}).select();
+      if(d&&d[0])habits.push(rowToHabit(d[0]));
+    }
+  }
+}
+
+async function updateHabit(h){
+  const row=habitToRow(h);
+  const{error}=await sb.from('habits').update(row).eq('id',Number(h.id));
+  if(error)console.error('Update habit error:',error);
+}
+
+async function insertHabit(h){
+  const row=habitToRow(h);
+  const{data,error}=await sb.from('habits').insert(row).select();
+  if(error){console.error('Insert habit error:',error);toast('Erreur création habitude');return null}
+  if(data&&data[0])h.id=String(data[0].id);
+  return h;
+}
+
+/* ═══════════════════════════════════════════
+   THEME (localStorage OK — UI pref only)
+   ═══════════════════════════════════════════ */
+let theme=localStorage.getItem('tf2-theme')||'dark';
 function applyTheme(){document.documentElement.setAttribute('data-theme',theme==='light'?'light':'');document.getElementById('theme-btn').innerHTML=theme==='dark'?'&#9789;':'&#9788;'}
-document.getElementById('theme-btn').onclick=()=>{theme=theme==='dark'?'light':'dark';SS('tf2-theme',theme);applyTheme()};
+document.getElementById('theme-btn').onclick=()=>{theme=theme==='dark'?'light':'dark';localStorage.setItem('tf2-theme',theme);applyTheme()};
 applyTheme();
 
-/* ═══ NAV ═══ */
+/* ═══════════════════════════════════════════
+   NAV
+   ═══════════════════════════════════════════ */
 document.getElementById('vnav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.v)return;document.querySelectorAll('#vnav button').forEach(x=>x.classList.remove('act'));b.classList.add('act');document.querySelectorAll('.vw').forEach(v=>v.classList.remove('act'));document.getElementById('v-'+b.dataset.v).classList.add('act');renderAll()});
 document.getElementById('sb-cats').addEventListener('click',e=>{const b=e.target.closest('.sb-cat');if(!b)return;fCat=b.dataset.c;document.querySelectorAll('.sb-cat').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()});
 document.getElementById('sb-prios').addEventListener('click',e=>{const b=e.target.closest('.sb-prio');if(!b)return;fPrio=b.dataset.p;document.querySelectorAll('.sb-prio').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()});
 
-/* ═══ MODAL ═══ */
+/* ═══════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════ */
 function openModal(){document.getElementById('modal').classList.add('open');document.getElementById('f-title').focus()}
 function closeModal(){document.getElementById('modal').classList.remove('open');['f-title','f-desc','f-dur'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-due').value=''}
-function saveTask(){
+
+async function saveTask(){
   const title=document.getElementById('f-title').value.trim();
   if(!title){toast('Titre requis !');return}
-  tasks.push({id:uid(),title,desc:document.getElementById('f-desc').value.trim(),cat:document.getElementById('f-cat').value,prio:document.getElementById('f-prio').value,dur:document.getElementById('f-dur').value.trim(),due:document.getElementById('f-due').value,status:document.getElementById('f-status').value,eq:document.getElementById('f-eq').value,calDay:null,calHour:null,created:Date.now()});
-  persist();closeModal();renderAll();toast('Tâche créée ✓');
+  const t={
+    id:null,title,
+    desc:document.getElementById('f-desc').value.trim(),
+    cat:document.getElementById('f-cat').value,
+    prio:document.getElementById('f-prio').value,
+    dur:document.getElementById('f-dur').value.trim(),
+    due:document.getElementById('f-due').value,
+    status:document.getElementById('f-status').value,
+    eq:document.getElementById('f-eq').value,
+    calDay:null,calHour:null
+  };
+  const result=await insertTask(t);
+  if(result){tasks.push(result);closeModal();renderAll();toast('Tâche créée ✓')}
 }
-function delTask(id){tasks=tasks.filter(t=>t.id!==id);persist();renderAll()}
-function toggleDone(id){const t=tasks.find(x=>x.id===id);if(t){t.status=t.status==='done'?'todo':'done';persist();renderAll()}}
 
-/* ═══ DRAG ═══ */
+async function delTask(id){
+  await deleteTask(id);
+  tasks=tasks.filter(t=>t.id!==id);
+  renderAll();
+}
+
+async function toggleDone(id){
+  const t=tasks.find(x=>x.id===id);
+  if(t){t.status=t.status==='done'?'todo':'done';await updateTask(t);renderAll()}
+}
+
+/* ═══════════════════════════════════════════
+   DRAG
+   ═══════════════════════════════════════════ */
 function dStart(e){dragId=e.target.closest('[data-id]').dataset.id;e.dataTransfer.effectAllowed='move';e.target.closest('[data-id]').style.opacity='.5'}
 function dEnd(e){e.target.closest('[data-id]')&&(e.target.closest('[data-id]').style.opacity='1');dragId=null}
 
-/* ═══ SIDEBAR STATS ═══ */
+/* ═══════════════════════════════════════════
+   SIDEBAR STATS
+   ═══════════════════════════════════════════ */
 function renderSidebar(){
   const all=tasks.length,done=tasks.filter(t=>t.status==='done').length,doing=tasks.filter(t=>t.status==='doing').length,todo=tasks.filter(t=>t.status==='todo').length;
   document.getElementById('prog-txt').textContent=done+'/'+all;
@@ -469,7 +601,9 @@ function renderSidebar(){
   document.getElementById('top-sub').textContent=(todo+doing)+' tâche'+(todo+doing>1?'s':'')+' en attente';
 }
 
-/* ═══ KANBAN ═══ */
+/* ═══════════════════════════════════════════
+   KANBAN
+   ═══════════════════════════════════════════ */
 function cardHTML(t){
   const dots=Array(PN[t.prio]||1).fill('<span></span>').join('');
   return `<div class="card" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">
@@ -487,9 +621,11 @@ function renderKanban(){
     document.getElementById('kc-'+s).textContent=items.length})}
 function kOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
 function kLeave(e){e.currentTarget.classList.remove('dragover')}
-function kDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.status=e.currentTarget.dataset.st;persist();renderAll()}dragId=null}
+async function kDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.status=e.currentTarget.dataset.st;renderAll();await updateTask(t)}dragId=null}
 
-/* ═══ LIST ═══ */
+/* ═══════════════════════════════════════════
+   LIST
+   ═══════════════════════════════════════════ */
 function renderList(){
   const f=filt().sort((a,b)=>PO[a.prio]-PO[b.prio]);
   document.getElementById('ls-body').innerHTML=f.map(t=>{
@@ -505,7 +641,9 @@ function renderList(){
       <td><button class="ls-del" onclick="delTask('${t.id}')">&#10005;</button></td>
     </tr>`}).join('')}
 
-/* ═══ CALENDAR ═══ */
+/* ═══════════════════════════════════════════
+   CALENDAR
+   ═══════════════════════════════════════════ */
 function weekDates(off){const n=new Date(),d=n.getDay(),m=new Date(n);m.setDate(n.getDate()-(d===0?6:d-1)+off*7);return Array.from({length:7},(_,i)=>{const x=new Date(m);x.setDate(m.getDate()+i);return x})}
 const HOURS=Array.from({length:14},(_,i)=>i+7);
 
@@ -513,33 +651,25 @@ function renderCalendar(){
   const dates=weekDates(calOff),today=dk(new Date());
   const d0=dates[0],d6=dates[6];
   document.getElementById('cal-label').textContent=d0.getDate()+' '+MOIS[d0.getMonth()]+' — '+d6.getDate()+' '+MOIS[d6.getMonth()]+' '+d6.getFullYear();
-
-  // Unplanned
   const unpl=filt().filter(t=>!t.calDay&&t.status!=='done');
   document.getElementById('cal-unpl').innerHTML=unpl.map(t=>`<div class="cal-mini" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="cal-mini-t">${esc(t.title)}</div><div class="cal-mini-s">${CL[t.cat]||''} · ${t.dur||'—'}</div></div>`).join('')||'<div style="color:var(--tx3);padding:12px;font-size:.78rem;text-align:center">Aucune tâche</div>';
-
-  // Header
   document.getElementById('cal-hdr').innerHTML='<div class="cal-hdr-time"></div>'+dates.map((d,i)=>`<div class="cal-hdr-day ${dk(d)===today?'today':''}">${JOURS[i]}<span class="num">${d.getDate()}</span></div>`).join('');
-
-  // Body
   const timeCol=HOURS.map(h=>`<div class="cal-time-slot">${String(h).padStart(2,'0')}h</div>`).join('');
   const dayCols=dates.map(d=>{
     const key=dk(d);
     const dayTasks=filt().filter(t=>t.calDay===key);
     const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');
     const evts=dayTasks.map(t=>{
-      const h=t.calHour||7;
-      const top=(h-7)*48;
+      const h=t.calHour||7;const top=(h-7)*48;
       return `<div class="cal-evt" style="top:${top}px;height:46px" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${esc(t.title)}</div>`}).join('');
     return `<div class="cal-day-col" data-day="${key}" ondragover="cdOver(event)" ondragleave="cdLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
-
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
 function calMode(m){calView=m;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day',month:'cal-btn-month'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
 function cdOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
 function cdLeave(e){e.currentTarget.classList.remove('dragover')}
-function cdDrop(e){
+async function cdDrop(e){
   e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;
   const t=tasks.find(x=>x.id===dragId);
   if(t){
@@ -547,15 +677,17 @@ function cdDrop(e){
     if(col){
       t.calDay=col.dataset.day;
       const rect=col.getBoundingClientRect();
-      const y=e.clientY-rect.top+col.parentElement?.parentElement?.scrollTop||0;
+      const y=e.clientY-rect.top+(col.parentElement?.parentElement?.scrollTop||0);
       t.calHour=Math.min(20,Math.max(7,Math.floor(y/48)+7));
     }
-    persist();renderAll()}dragId=null}
+    renderAll();await updateTask(t)}dragId=null}
 function cuOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
 function cuLeave(e){e.currentTarget.classList.remove('dragover')}
-function cuDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.calDay=null;t.calHour=null;persist();renderAll()}dragId=null}
+async function cuDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.calDay=null;t.calHour=null;renderAll();await updateTask(t)}dragId=null}
 
-/* ═══ EISENHOWER ═══ */
+/* ═══════════════════════════════════════════
+   EISENHOWER
+   ═══════════════════════════════════════════ */
 function renderEisenhower(){
   ['do','plan','delegate','eliminate'].forEach(q=>{
     const items=filt().filter(t=>t.eq===q).sort((a,b)=>PO[a.prio]-PO[b.prio]);
@@ -567,9 +699,11 @@ function renderEisenhower(){
     document.getElementById('ec-'+q).textContent=items.length})}
 function eOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
 function eLeave(e){e.currentTarget.classList.remove('dragover')}
-function eDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.eq=e.currentTarget.dataset.eq;persist();renderAll()}dragId=null}
+async function eDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.eq=e.currentTarget.dataset.eq;renderAll();await updateTask(t)}dragId=null}
 
-/* ═══ DASHBOARD ═══ */
+/* ═══════════════════════════════════════════
+   DASHBOARD
+   ═══════════════════════════════════════════ */
 function renderDashboard(){
   const all=tasks.length,done=tasks.filter(t=>t.status==='done').length,doing=tasks.filter(t=>t.status==='doing').length,todo=tasks.filter(t=>t.status==='todo').length;
   const pct=all?Math.round(done/all*100):0;
@@ -586,19 +720,16 @@ function renderDashboard(){
   const eqColors={do:'var(--or)',plan:'var(--blue)',delegate:'var(--yellow)',eliminate:'var(--tx3)'};
   const eqBars=eqs.map(q=>{const n=tasks.filter(t=>t.eq===q).length;return `<div class="dc-bar-r"><span class="lb">${EL[q]}</span><div class="bar"><div class="fill" style="width:${all?n/all*100:0}%;background:${eqColors[q]}"></div></div><span class="vl">${n}</span></div>`}).join('');
 
-  // Weekly activity
   const wk=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);wk.push({label:JOURS[(d.getDay()+6)%7],key:dk(d),count:tasks.filter(t=>t.calDay===dk(d)&&t.status==='done').length})}
   const mx=Math.max(1,...wk.map(w=>w.count));
   const wkBars=wk.map(w=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="width:100%;height:80px;display:flex;align-items:flex-end;justify-content:center"><div style="width:22px;background:var(--or);border-radius:4px 4px 0 0;height:${w.count/mx*100}%;min-height:${w.count?4:0}px;transition:.4s"></div></div><span style="font-size:.68rem;color:var(--tx3)">${w.label}</span></div>`).join('');
 
-  // Habits
   const today=new Date();
   const habitHTML=habits.map((h,hi)=>{
-    let streak=0;const d=new Date();while(h.checks[dk(d)]){streak++;d.setDate(d.getDate()-1)}
-    const dots=Array.from({length:7},(_,i)=>{const dd=new Date(today);dd.setDate(today.getDate()-6+i);const on=h.checks[dk(dd)]?'on':'';return `<div class="dc-habit-dot ${on}" style="cursor:pointer" onclick="toggleHabit(${hi},'${dk(dd)}')"></div>`}).join('');
+    let streak=0;const d=new Date();while(h.checks&&h.checks[dk(d)]){streak++;d.setDate(d.getDate()-1)}
+    const dots=Array.from({length:7},(_,i)=>{const dd=new Date(today);dd.setDate(today.getDate()-6+i);const on=h.checks&&h.checks[dk(dd)]?'on':'';return `<div class="dc-habit-dot ${on}" style="cursor:pointer" onclick="toggleHabit(${hi},'${dk(dd)}')"></div>`}).join('');
     return `<div class="dc-row"><span style="font-size:.84rem;flex:1">${esc(h.name)}</span><div class="dc-habit-dots">${dots}</div><span class="dc-streak">${streak>0?'&#128293; '+streak+'j':''}</span></div>`}).join('');
 
-  // Upcoming
   const upcoming=tasks.filter(t=>t.due&&t.status!=='done').sort((a,b)=>a.due.localeCompare(b.due)).slice(0,5);
   const upHTML=upcoming.map(t=>{
     const dl=Math.ceil((new Date(t.due)-new Date())/864e5);
@@ -620,17 +751,45 @@ function renderDashboard(){
       <button onclick="addHabit()" style="margin-top:10px;padding:6px 14px;border:1px solid var(--brd);border-radius:6px;background:var(--surf2);color:var(--tx2);cursor:pointer;font-size:.78rem">+ Ajouter une habitude</button></div>
     <div class="dc"><div class="dc-t">Échéances proches</div>${upHTML}</div>`;
 }
-function toggleHabit(hi,key){habits[hi].checks[key]=!habits[hi].checks[key];if(!habits[hi].checks[key])delete habits[hi].checks[key];persist();renderDashboard()}
-function addHabit(){const n=prompt('Nom de l\'habitude :');if(n&&n.trim()){habits.push({name:n.trim(),checks:{}});persist();renderDashboard()}}
 
-/* ═══ RENDER ALL ═══ */
+async function toggleHabit(hi,key){
+  if(!habits[hi].checks)habits[hi].checks={};
+  habits[hi].checks[key]=!habits[hi].checks[key];
+  if(!habits[hi].checks[key])delete habits[hi].checks[key];
+  renderDashboard();
+  await updateHabit(habits[hi]);
+}
+
+async function addHabit(){
+  const n=prompt('Nom de l\'habitude :');
+  if(n&&n.trim()){
+    const h={id:null,name:n.trim(),checks:{}};
+    const result=await insertHabit(h);
+    if(result){habits.push(result);renderDashboard()}
+  }
+}
+
+/* ═══════════════════════════════════════════
+   RENDER ALL
+   ═══════════════════════════════════════════ */
 function renderAll(){renderSidebar();renderKanban();renderList();renderCalendar();renderEisenhower();renderDashboard()}
 
-/* ═══ TOAST ═══ */
+/* ═══════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════ */
 function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;document.getElementById('toasts').appendChild(e);setTimeout(()=>e.remove(),3e3)}
 
-/* ═══ INIT ═══ */
-renderAll();
+/* ═══════════════════════════════════════════
+   INIT — Load from Supabase then render
+   ═══════════════════════════════════════════ */
+(async function init(){
+  toast('Connexion à Supabase…');
+  await Promise.all([loadTasks(),loadHabits()]);
+  _loading=false;
+  renderAll();
+  toast('Données synchronisées ✓');
+})();
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))openModal()});
 </script>
 </body>
