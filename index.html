@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskFlow — Organisateur personnel</title>
+<style>
+:root{
+  --bg:#0f0f0f;--side:#1a1a1a;--surf:#1e1e1e;--surf2:#262626;--surf3:#2f2f2f;
+  --brd:#2a2a2a;--brd2:#3a3a3a;
+  --tx:#f5f5f5;--tx2:#a0a0a0;--tx3:#666;
+  --or:#f97316;--or2:#fb923c;--or3:#ea580c;--orGlow:rgba(249,115,22,.12);
+  --red:#ef4444;--redbg:rgba(239,68,68,.12);
+  --blue:#3b82f6;--bluebg:rgba(59,130,246,.12);
+  --green:#22c55e;--greenbg:rgba(34,197,94,.12);
+  --yellow:#eab308;--yellowbg:rgba(234,179,8,.12);
+  --amber:#d97706;--amberbg:rgba(217,119,6,.12);
+  --purple:#a855f7;--purplebg:rgba(168,85,247,.12);
+  --r:10px;--r2:14px;--sh:0 8px 32px rgba(0,0,0,.5);
+}
+[data-theme="light"]{
+  --bg:#f5f5f4;--side:#ffffff;--surf:#ffffff;--surf2:#f5f5f4;--surf3:#e7e5e4;
+  --brd:#e5e5e5;--brd2:#d4d4d4;
+  --tx:#1c1917;--tx2:#57534e;--tx3:#a8a29e;
+  --orGlow:rgba(249,115,22,.08);--redbg:rgba(239,68,68,.08);--bluebg:rgba(59,130,246,.08);
+  --greenbg:rgba(34,197,94,.08);--yellowbg:rgba(234,179,8,.08);--amberbg:rgba(217,119,6,.08);
+  --purplebg:rgba(168,85,247,.08);--sh:0 8px 32px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--tx);display:flex;height:100vh;overflow:hidden;transition:background .3s,color .3s}
+button,input,textarea,select{font-family:inherit}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:3px}
+
+/* ══ SIDEBAR ══ */
+.sb{width:270px;background:var(--side);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;transition:background .3s}
+.sb-logo{padding:22px 18px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--brd)}
+.sb-logo-icon{width:42px;height:42px;background:var(--or);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0}
+.sb-logo-text{line-height:1.2}
+.sb-logo-text .brand{font-size:1rem;font-weight:700;color:var(--tx)}
+.sb-logo-text .sub{font-size:.72rem;color:var(--tx3)}
+
+.sb-block{padding:18px;border-bottom:1px solid var(--brd)}
+.sb-label{font-size:.68rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--tx3);font-weight:600;margin-bottom:10px}
+.sb-prog-header{display:flex;justify-content:space-between;font-size:.82rem;color:var(--tx2);margin-bottom:6px}
+.sb-prog-header strong{color:var(--or)}
+.sb-prog-bar{height:7px;background:var(--surf3);border-radius:4px;overflow:hidden}
+.sb-prog-fill{height:100%;background:linear-gradient(90deg,var(--or3),var(--or));border-radius:4px;transition:width .4s}
+
+.sb-stats{display:flex;gap:8px;margin-top:12px}
+.sb-stat{flex:1;background:var(--surf2);border-radius:8px;padding:10px 8px;text-align:center}
+.sb-stat-num{font-size:1.3rem;font-weight:700}
+.sb-stat-label{font-size:.65rem;color:var(--tx3);margin-top:2px}
+.sb-stat-num.todo{color:var(--or)}.sb-stat-num.doing{color:var(--blue)}.sb-stat-num.done{color:var(--green)}
+
+.sb-cats{display:flex;flex-direction:column;gap:3px}
+.sb-cat{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:.84rem;color:var(--tx2);border:none;background:none;width:100%;text-align:left;transition:.15s}
+.sb-cat:hover{background:var(--surf2);color:var(--tx)}
+.sb-cat.active{background:var(--orGlow);color:var(--or)}
+.sb-cat-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.sb-cat-count{margin-left:auto;font-size:.72rem;background:var(--surf3);padding:1px 8px;border-radius:10px;color:var(--tx3);min-width:22px;text-align:center}
+
+.sb-prios{display:flex;flex-direction:column;gap:3px}
+.sb-prio{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:.84rem;color:var(--tx2);border:none;background:none;width:100%;text-align:left;transition:.15s}
+.sb-prio:hover{background:var(--surf2);color:var(--tx)}
+.sb-prio.active{background:var(--orGlow);color:var(--or)}
+.sb-prio-dots{display:flex;gap:3px}
+.sb-prio-dots span{width:6px;height:6px;border-radius:50%}
+
+/* ══ MAIN ══ */
+.mn{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:16px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:16px;flex-shrink:0;flex-wrap:wrap;transition:background .3s}
+.top-left{flex:1;min-width:180px}
+.top-left h1{font-size:1.15rem;font-weight:700}
+.top-left p{font-size:.78rem;color:var(--tx3);margin-top:2px}
+.theme-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--brd);background:var(--surf2);color:var(--tx2);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.15s}
+.theme-btn:hover{border-color:var(--or);color:var(--or)}
+.top-nav{display:flex;gap:4px}
+.top-nav button{padding:8px 16px;border:none;border-radius:8px;background:transparent;color:var(--tx2);font-size:.83rem;cursor:pointer;font-weight:500;transition:.15s}
+.top-nav button:hover{background:var(--surf2);color:var(--tx)}
+.top-nav button.act{background:var(--or);color:#fff;font-weight:600}
+.btn-new{padding:9px 18px;border:none;border-radius:8px;background:var(--or);color:#fff;font-size:.83rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(249,115,22,.25);transition:.15s}
+.btn-new:hover{background:var(--or2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,115,22,.35)}
+
+.content{flex:1;overflow-y:auto;padding:22px 24px}
+.vw{display:none}.vw.act{display:block}
+
+/* ══ KANBAN ══ */
+.kb{display:flex;gap:14px;height:calc(100vh - 135px)}
+.kb-col{flex:1;background:var(--side);border:1px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;transition:.2s}
+.kb-col.dragover{border-color:var(--or);box-shadow:inset 0 0 30px var(--orGlow)}
+.kb-hd{padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--brd);font-weight:600;font-size:.88rem}
+.kb-cnt{background:var(--surf3);padding:2px 10px;border-radius:10px;font-size:.72rem;font-weight:500;color:var(--tx2)}
+.col-todo .kb-hd{border-bottom-color:var(--or)}
+.col-doing .kb-hd{border-bottom-color:var(--blue)}
+.col-done .kb-hd{border-bottom-color:var(--green)}
+.kb-cards{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:14px;cursor:grab;transition:.15s;position:relative}
+.card:hover{border-color:var(--brd2);transform:translateY(-1px);box-shadow:var(--sh)}
+.card:active{cursor:grabbing;opacity:.7}
+.card-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.badge{padding:3px 10px;border-radius:6px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.b-travail{background:var(--yellowbg);color:var(--amber)}
+.b-personnel{background:var(--bluebg);color:var(--blue)}
+.b-sante{background:var(--greenbg);color:var(--green)}
+.b-urgent{background:var(--redbg);color:var(--red)}
+.b-apprentissage{background:var(--amberbg);color:var(--or3)}
+.card-dots{margin-left:auto;display:flex;gap:3px}
+.card-dots span{width:6px;height:6px;border-radius:50%;background:var(--or)}
+.card-title{font-size:.9rem;font-weight:600;margin-bottom:4px;line-height:1.3}
+.card-desc{font-size:.76rem;color:var(--tx2);line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-foot{display:flex;align-items:center;gap:10px;font-size:.72rem;color:var(--tx3)}
+.card-foot span{display:flex;align-items:center;gap:4px}
+.card-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.85rem;opacity:0;transition:.15s;padding:4px;border-radius:4px}
+.card:hover .card-del{opacity:1}
+.card-del:hover{color:var(--red);background:var(--redbg)}
+
+/* ══ LIST ══ */
+.ls-tbl{width:100%;border-collapse:collapse}
+.ls-tbl th{text-align:left;padding:10px 14px;font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);border-bottom:1px solid var(--brd);font-weight:600}
+.ls-tbl td{padding:11px 14px;border-bottom:1px solid var(--brd);font-size:.84rem;vertical-align:middle}
+.ls-tbl tr:hover td{background:var(--surf)}
+.ls-chk{width:18px;height:18px;border:2px solid var(--brd2);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.ls-chk:hover{border-color:var(--or)}
+.ls-chk.on{background:var(--green);border-color:var(--green)}
+.ls-chk.on::after{content:'✓';color:#fff;font-size:.7rem;font-weight:700}
+.ls-done{text-decoration:line-through;opacity:.4}
+.ls-del{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.95rem}
+.ls-del:hover{color:var(--red)}
+
+/* ══ CALENDAR ══ */
+.cal-w{display:flex;gap:14px;height:calc(100vh - 135px)}
+.cal-side{width:210px;background:var(--side);border:1px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.cal-side.dragover{border-color:var(--or)}
+.cal-side-hd{padding:12px 14px;font-weight:600;font-size:.84rem;border-bottom:1px solid var(--brd)}
+.cal-side-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px}
+.cal-mini{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:8px 10px;cursor:grab;font-size:.76rem;transition:.15s}
+.cal-mini:hover{border-color:var(--or)}
+.cal-mini-t{font-weight:600;margin-bottom:2px}
+.cal-mini-s{color:var(--tx3);font-size:.67rem}
+.cal-main{flex:1;background:var(--side);border:1px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden}
+.cal-toolbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--brd)}
+.cal-toolbar button{padding:5px 12px;border:1px solid var(--brd);border-radius:6px;background:var(--surf2);color:var(--tx2);cursor:pointer;font-size:.78rem;transition:.15s}
+.cal-toolbar button:hover{border-color:var(--or);color:var(--tx)}
+.cal-toolbar button.act{background:var(--or);color:#fff;border-color:var(--or)}
+.cal-toolbar span{font-size:.84rem;color:var(--tx2);flex:1;text-align:center}
+.cal-grid{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.cal-hdr{display:flex;border-bottom:1px solid var(--brd);flex-shrink:0}
+.cal-hdr-time{width:54px;flex-shrink:0;border-right:1px solid var(--brd)}
+.cal-hdr-day{flex:1;text-align:center;padding:10px 4px;font-size:.76rem;font-weight:600;color:var(--tx2);border-right:1px solid var(--brd)}
+.cal-hdr-day:last-child{border-right:none}
+.cal-hdr-day.today{color:var(--or);background:var(--orGlow)}
+.cal-hdr-day .num{display:block;font-size:1.05rem;margin-top:2px}
+.cal-body{flex:1;display:flex;overflow-y:auto}
+.cal-time-col{width:54px;flex-shrink:0;border-right:1px solid var(--brd)}
+.cal-time-slot{height:48px;display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 0;font-size:.65rem;color:var(--tx3);border-bottom:1px solid var(--brd)}
+.cal-days-wrap{flex:1;display:flex}
+.cal-day-col{flex:1;border-right:1px solid var(--brd);position:relative}
+.cal-day-col:last-child{border-right:none}
+.cal-day-col.dragover{background:var(--orGlow)}
+.cal-hour-slot{height:48px;border-bottom:1px solid var(--brd)}
+.cal-evt{position:absolute;left:2px;right:2px;background:var(--or);border-radius:5px;padding:3px 6px;font-size:.67rem;color:#fff;font-weight:500;cursor:grab;z-index:2;overflow:hidden;border-left:3px solid var(--or3)}
+.cal-evt:hover{filter:brightness(1.1)}
+
+/* ══ EISENHOWER ══ */
+.ei{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 135px)}
+.eq{background:var(--side);border:2px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;transition:.2s}
+.eq.dragover{box-shadow:inset 0 0 30px var(--orGlow)}
+.eq-hd{padding:14px 16px;font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--brd)}
+.eq-hd .eq-cnt{margin-left:auto;font-size:.72rem;background:var(--surf3);padding:2px 10px;border-radius:10px;color:var(--tx2)}
+.eq-do{border-color:var(--or)}.eq-do .eq-hd{color:var(--or)}
+.eq-plan{border-color:var(--blue)}.eq-plan .eq-hd{color:var(--blue)}
+.eq-delegate{border-color:var(--yellow)}.eq-delegate .eq-hd{color:var(--yellow)}
+.eq-eliminate{border-color:var(--tx3)}.eq-eliminate .eq-hd{color:var(--tx3)}
+.eq-cards{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px}
+.eq-card{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;cursor:grab;display:flex;align-items:center;gap:10px;font-size:.82rem;transition:.15s}
+.eq-card:hover{border-color:var(--brd2)}
+.eq-card-t{flex:1;font-weight:500}
+.eq-card-x{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.85rem}
+.eq-card-x:hover{color:var(--red)}
+.eq-empty{color:var(--tx3);font-size:.78rem;padding:16px;text-align:center}
+
+/* ══ DASHBOARD ══ */
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.dc{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);padding:20px}
+.dc-t{font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);font-weight:600;margin-bottom:14px}
+.dc-big{font-size:2.6rem;font-weight:700;color:var(--or);line-height:1}
+.dc-sub{font-size:.82rem;color:var(--tx2);margin-top:4px}
+.dc-bar-r{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dc-bar-r .lb{font-size:.78rem;color:var(--tx2);width:100px;flex-shrink:0}
+.dc-bar-r .bar{flex:1;height:8px;background:var(--surf3);border-radius:4px;overflow:hidden}
+.dc-bar-r .fill{height:100%;border-radius:4px;transition:width .5s}
+.dc-bar-r .vl{font-size:.75rem;color:var(--tx3);width:30px;text-align:right}
+.dc-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)}
+.dc-row:last-child{border:none}
+.dc-habit-dots{display:flex;gap:4px;margin-left:auto}
+.dc-habit-dot{width:14px;height:14px;border-radius:4px;background:var(--surf3)}
+.dc-habit-dot.on{background:var(--or)}
+.dc-streak{font-size:.75rem;color:var(--or);margin-left:6px;white-space:nowrap}
+
+/* ══ MODAL ══ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);width:500px;max-width:94vw;max-height:90vh;overflow-y:auto;box-shadow:var(--sh);padding:28px}
+.modal-hd{font-size:1.1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.modal-hd button{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:1.2rem}.modal-hd button:hover{color:var(--tx)}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:.76rem;color:var(--tx2);margin-bottom:5px;font-weight:500}
+.fg input,.fg textarea,.fg select{width:100%;padding:10px 14px;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);color:var(--tx);font-size:.86rem;outline:none;transition:.15s}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--or)}
+.fg textarea{resize:vertical;min-height:56px}
+.fg select{cursor:pointer}
+.fr{display:flex;gap:12px}.fr .fg{flex:1}
+.btn-submit{width:100%;padding:12px;border:none;border-radius:8px;background:var(--or);color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:4px;transition:.15s}
+.btn-submit:hover{background:var(--or2);box-shadow:0 4px 16px rgba(249,115,22,.3)}
+
+.toast-box{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;background:var(--surf2);border:1px solid var(--or);border-radius:var(--r);font-size:.84rem;animation:tIn .3s;box-shadow:var(--sh)}
+@keyframes tIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">&#128197;</div>
+    <div class="sb-logo-text"><div class="brand">TaskFlow</div><div class="sub">Organisateur personnel</div></div>
+  </div>
+
+  <div class="sb-block">
+    <div class="sb-label">Progression</div>
+    <div class="sb-prog-header"><span>Tâches terminées</span><strong id="prog-txt">0/0</strong></div>
+    <div class="sb-prog-bar"><div class="sb-prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="sb-stats">
+      <div class="sb-stat"><div class="sb-stat-num todo" id="st-todo">0</div><div class="sb-stat-label">À faire</div></div>
+      <div class="sb-stat"><div class="sb-stat-num doing" id="st-doing">0</div><div class="sb-stat-label">En cours</div></div>
+      <div class="sb-stat"><div class="sb-stat-num done" id="st-done">0</div><div class="sb-stat-label">Terminé</div></div>
+    </div>
+  </div>
+
+  <div class="sb-block">
+    <div class="sb-label">Catégories</div>
+    <div class="sb-cats" id="sb-cats">
+      <button class="sb-cat active" data-c="all"><span class="sb-cat-dot" style="background:var(--or)"></span>Toutes<span class="sb-cat-count" id="cc-all">0</span></button>
+      <button class="sb-cat" data-c="travail"><span class="sb-cat-dot" style="background:var(--amber)"></span>Travail<span class="sb-cat-count" id="cc-travail">0</span></button>
+      <button class="sb-cat" data-c="personnel"><span class="sb-cat-dot" style="background:var(--blue)"></span>Personnel<span class="sb-cat-count" id="cc-personnel">0</span></button>
+      <button class="sb-cat" data-c="sante"><span class="sb-cat-dot" style="background:var(--green)"></span>Santé<span class="sb-cat-count" id="cc-sante">0</span></button>
+      <button class="sb-cat" data-c="urgent"><span class="sb-cat-dot" style="background:var(--red)"></span>Urgent<span class="sb-cat-count" id="cc-urgent">0</span></button>
+      <button class="sb-cat" data-c="apprentissage"><span class="sb-cat-dot" style="background:var(--or3)"></span>Apprentissage<span class="sb-cat-count" id="cc-apprentissage">0</span></button>
+    </div>
+  </div>
+
+  <div class="sb-block" style="border-bottom:none;">
+    <div class="sb-label">Par priorité</div>
+    <div class="sb-prios" id="sb-prios">
+      <button class="sb-prio active" data-p="all"><span class="sb-prio-dots"><span style="background:var(--tx3)"></span></span>Toutes</button>
+      <button class="sb-prio" data-p="critique"><span class="sb-prio-dots"><span style="background:var(--or)"></span><span style="background:var(--or)"></span><span style="background:var(--or)"></span><span style="background:var(--or)"></span><span style="background:var(--or)"></span></span>Critique</button>
+      <button class="sb-prio" data-p="haute"><span class="sb-prio-dots"><span style="background:var(--or)"></span><span style="background:var(--or)"></span><span style="background:var(--or)"></span><span style="background:var(--or)"></span></span>Haute</button>
+      <button class="sb-prio" data-p="moyenne"><span class="sb-prio-dots"><span style="background:var(--or)"></span><span style="background:var(--or)"></span><span style="background:var(--or)"></span></span>Moyenne</button>
+      <button class="sb-prio" data-p="moderee"><span class="sb-prio-dots"><span style="background:var(--or)"></span><span style="background:var(--or)"></span></span>Modérée</button>
+      <button class="sb-prio" data-p="basse"><span class="sb-prio-dots"><span style="background:var(--or)"></span></span>Basse</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="mn">
+  <div class="topbar">
+    <div class="top-left">
+      <h1>Mes tâches</h1>
+      <p id="top-sub">0 tâches en attente</p>
+    </div>
+    <button class="theme-btn" id="theme-btn" title="Mode clair / sombre">&#9789;</button>
+    <div class="top-nav" id="vnav">
+      <button class="act" data-v="kanban">Kanban</button>
+      <button data-v="list">Liste</button>
+      <button data-v="calendar">Calendrier</button>
+      <button data-v="eisenhower">Eisenhower</button>
+      <button data-v="dashboard">Dashboard</button>
+    </div>
+    <button class="btn-new" onclick="openModal()">＋ Nouvelle tâche</button>
+  </div>
+
+  <div class="content">
+    <!-- KANBAN -->
+    <div id="v-kanban" class="vw act">
+      <div class="kb">
+        <div class="kb-col col-todo" data-st="todo" ondragover="kOver(event)" ondragleave="kLeave(event)" ondrop="kDrop(event)">
+          <div class="kb-hd">&#9898; À faire <span class="kb-cnt" id="kc-todo">0</span></div>
+          <div class="kb-cards" id="k-todo"></div>
+        </div>
+        <div class="kb-col col-doing" data-st="doing" ondragover="kOver(event)" ondragleave="kLeave(event)" ondrop="kDrop(event)">
+          <div class="kb-hd">&#128992; En cours <span class="kb-cnt" id="kc-doing">0</span></div>
+          <div class="kb-cards" id="k-doing"></div>
+        </div>
+        <div class="kb-col col-done" data-st="done" ondragover="kOver(event)" ondragleave="kLeave(event)" ondrop="kDrop(event)">
+          <div class="kb-hd">&#9989; Terminé <span class="kb-cnt" id="kc-done">0</span></div>
+          <div class="kb-cards" id="k-done"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div id="v-list" class="vw">
+      <table class="ls-tbl"><thead><tr><th></th><th>Tâche</th><th>Catégorie</th><th>Priorité</th><th>Durée</th><th>Échéance</th><th></th></tr></thead>
+      <tbody id="ls-body"></tbody></table>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="v-calendar" class="vw">
+      <div class="cal-w">
+        <div class="cal-side" id="cal-side" ondragover="cuOver(event)" ondragleave="cuLeave(event)" ondrop="cuDrop(event)">
+          <div class="cal-side-hd">Tâches non planifiées</div>
+          <div class="cal-side-list" id="cal-unpl"></div>
+        </div>
+        <div class="cal-main">
+          <div class="cal-toolbar">
+            <button onclick="calNav(-1)">&#8592;</button>
+            <span id="cal-label"></span>
+            <button onclick="calNav(1)">&#8594;</button>
+            <button class="act" id="cal-btn-sem" onclick="calMode('week')">Semaine</button>
+            <button id="cal-btn-day" onclick="calMode('day')">Jour</button>
+            <button id="cal-btn-month" onclick="calMode('month')">Mois</button>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-hdr" id="cal-hdr"></div>
+            <div class="cal-body" id="cal-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EISENHOWER -->
+    <div id="v-eisenhower" class="vw">
+      <div class="ei">
+        <div class="eq eq-do" data-eq="do" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)">
+          <div class="eq-hd">&#128314; Faire maintenant <span class="eq-cnt" id="ec-do">0</span></div>
+          <div class="eq-cards" id="eq-do"></div>
+        </div>
+        <div class="eq eq-plan" data-eq="plan" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)">
+          <div class="eq-hd">&#9200; Planifier <span class="eq-cnt" id="ec-plan">0</span></div>
+          <div class="eq-cards" id="eq-plan"></div>
+        </div>
+        <div class="eq eq-delegate" data-eq="delegate" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)">
+          <div class="eq-hd">&#128260; Déléguer <span class="eq-cnt" id="ec-delegate">0</span></div>
+          <div class="eq-cards" id="eq-delegate"></div>
+        </div>
+        <div class="eq eq-eliminate" data-eq="eliminate" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)">
+          <div class="eq-hd">&#128465;&#65039; Éliminer <span class="eq-cnt" id="ec-eliminate">0</span></div>
+          <div class="eq-cards" id="eq-eliminate"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="v-dashboard" class="vw">
+      <div class="dg" id="dash"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hd">Nouvelle tâche <button onclick="closeModal()">&#10005;</button></div>
+    <div class="fg"><label>Titre</label><input id="f-title" placeholder="Ex : Préparer la réunion…"></div>
+    <div class="fg"><label>Description</label><textarea id="f-desc" placeholder="Détails optionnels…"></textarea></div>
+    <div class="fr">
+      <div class="fg"><label>Catégorie</label><select id="f-cat">
+        <option value="travail">&#128188; Travail</option>
+        <option value="personnel">&#128100; Personnel</option>
+        <option value="sante">&#128154; Santé</option>
+        <option value="urgent">&#128680; Urgent</option>
+        <option value="apprentissage">&#128214; Apprentissage</option>
+      </select></div>
+      <div class="fg"><label>Priorité</label><select id="f-prio">
+        <option value="critique">&#9679;&#9679;&#9679;&#9679;&#9679; Critique</option>
+        <option value="haute">&#9679;&#9679;&#9679;&#9679; Haute</option>
+        <option value="moyenne" selected>&#9679;&#9679;&#9679; Moyenne</option>
+        <option value="moderee">&#9679;&#9679; Modérée</option>
+        <option value="basse">&#9679; Basse</option>
+      </select></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Durée estimée</label><input id="f-dur" placeholder="Ex : 2h, 30min"></div>
+      <div class="fg"><label>Échéance</label><input id="f-due" type="date"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Statut</label><select id="f-status">
+        <option value="todo">À faire</option>
+        <option value="doing">En cours</option>
+        <option value="done">Terminé</option>
+      </select></div>
+      <div class="fg"><label>Quadrant Eisenhower</label><select id="f-eq">
+        <option value="do">&#128314; Faire maintenant</option>
+        <option value="plan" selected>&#9200; Planifier</option>
+        <option value="delegate">&#128260; Déléguer</option>
+        <option value="eliminate">&#128465;&#65039; Éliminer</option>
+      </select></div>
+    </div>
+    <button class="btn-submit" onclick="saveTask()">Créer la tâche</button>
+  </div>
+</div>
+
+<div class="toast-box" id="toasts"></div>
+
+<script>
+/* ═══ STORAGE ═══ */
+const LS=k=>{try{const d=localStorage.getItem(k);return d?JSON.parse(d):null}catch{return null}};
+const SS=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let tasks=LS('tf2-tasks')||[];
+let habits=LS('tf2-habits')||[
+  {name:'Sport',checks:{}},{name:'Lecture',checks:{}},{name:'Méditation',checks:{}}
+];
+let fCat='all',fPrio='all',calOff=0,calView='week',dragId=null;
+
+const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const PO={critique:0,haute:1,moyenne:2,moderee:3,basse:4};
+const PL={critique:'Critique',haute:'Haute',moyenne:'Moyenne',moderee:'Modérée',basse:'Basse'};
+const PN={critique:5,haute:4,moyenne:3,moderee:2,basse:1};
+const CL={travail:'Travail',personnel:'Personnel',sante:'Santé',urgent:'Urgent',apprentissage:'Apprentissage'};
+const EL={do:'Faire maintenant',plan:'Planifier',delegate:'Déléguer',eliminate:'Éliminer'};
+const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const MOIS=['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+
+function persist(){SS('tf2-tasks',tasks);SS('tf2-habits',habits)}
+function dk(d){return d.toISOString().slice(0,10)}
+function filt(){return tasks.filter(t=>(fCat==='all'||t.cat===fCat)&&(fPrio==='all'||t.prio===fPrio))}
+
+/* ═══ THEME ═══ */
+let theme=LS('tf2-theme')||'dark';
+function applyTheme(){document.documentElement.setAttribute('data-theme',theme==='light'?'light':'');document.getElementById('theme-btn').innerHTML=theme==='dark'?'&#9789;':'&#9788;'}
+document.getElementById('theme-btn').onclick=()=>{theme=theme==='dark'?'light':'dark';SS('tf2-theme',theme);applyTheme()};
+applyTheme();
+
+/* ═══ NAV ═══ */
+document.getElementById('vnav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.v)return;document.querySelectorAll('#vnav button').forEach(x=>x.classList.remove('act'));b.classList.add('act');document.querySelectorAll('.vw').forEach(v=>v.classList.remove('act'));document.getElementById('v-'+b.dataset.v).classList.add('act');renderAll()});
+document.getElementById('sb-cats').addEventListener('click',e=>{const b=e.target.closest('.sb-cat');if(!b)return;fCat=b.dataset.c;document.querySelectorAll('.sb-cat').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()});
+document.getElementById('sb-prios').addEventListener('click',e=>{const b=e.target.closest('.sb-prio');if(!b)return;fPrio=b.dataset.p;document.querySelectorAll('.sb-prio').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()});
+
+/* ═══ MODAL ═══ */
+function openModal(){document.getElementById('modal').classList.add('open');document.getElementById('f-title').focus()}
+function closeModal(){document.getElementById('modal').classList.remove('open');['f-title','f-desc','f-dur'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-due').value=''}
+function saveTask(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){toast('Titre requis !');return}
+  tasks.push({id:uid(),title,desc:document.getElementById('f-desc').value.trim(),cat:document.getElementById('f-cat').value,prio:document.getElementById('f-prio').value,dur:document.getElementById('f-dur').value.trim(),due:document.getElementById('f-due').value,status:document.getElementById('f-status').value,eq:document.getElementById('f-eq').value,calDay:null,calHour:null,created:Date.now()});
+  persist();closeModal();renderAll();toast('Tâche créée ✓');
+}
+function delTask(id){tasks=tasks.filter(t=>t.id!==id);persist();renderAll()}
+function toggleDone(id){const t=tasks.find(x=>x.id===id);if(t){t.status=t.status==='done'?'todo':'done';persist();renderAll()}}
+
+/* ═══ DRAG ═══ */
+function dStart(e){dragId=e.target.closest('[data-id]').dataset.id;e.dataTransfer.effectAllowed='move';e.target.closest('[data-id]').style.opacity='.5'}
+function dEnd(e){e.target.closest('[data-id]')&&(e.target.closest('[data-id]').style.opacity='1');dragId=null}
+
+/* ═══ SIDEBAR STATS ═══ */
+function renderSidebar(){
+  const all=tasks.length,done=tasks.filter(t=>t.status==='done').length,doing=tasks.filter(t=>t.status==='doing').length,todo=tasks.filter(t=>t.status==='todo').length;
+  document.getElementById('prog-txt').textContent=done+'/'+all;
+  document.getElementById('prog-fill').style.width=all?(done/all*100)+'%':'0%';
+  document.getElementById('st-todo').textContent=todo;
+  document.getElementById('st-doing').textContent=doing;
+  document.getElementById('st-done').textContent=done;
+  document.getElementById('cc-all').textContent=all;
+  ['travail','personnel','sante','urgent','apprentissage'].forEach(c=>{const el=document.getElementById('cc-'+c);if(el)el.textContent=tasks.filter(t=>t.cat===c).length});
+  document.getElementById('top-sub').textContent=(todo+doing)+' tâche'+(todo+doing>1?'s':'')+' en attente';
+}
+
+/* ═══ KANBAN ═══ */
+function cardHTML(t){
+  const dots=Array(PN[t.prio]||1).fill('<span></span>').join('');
+  return `<div class="card" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">
+    <button class="card-del" onclick="delTask('${t.id}')">&#10005;</button>
+    <div class="card-top"><span class="badge b-${t.cat}">${CL[t.cat]||t.cat}</span><span class="card-dots">${dots}</span></div>
+    <div class="card-title">${esc(t.title)}</div>
+    ${t.desc?'<div class="card-desc">'+esc(t.desc)+'</div>':''}
+    <div class="card-foot">${t.dur?'<span>&#128339; '+esc(t.dur)+'</span>':''}${t.due?'<span>&#128197; '+t.due+'</span>':''}</div>
+  </div>`}
+function renderKanban(){
+  const f=filt();
+  ['todo','doing','done'].forEach(s=>{
+    const items=f.filter(t=>t.status===s).sort((a,b)=>PO[a.prio]-PO[b.prio]);
+    document.getElementById('k-'+s).innerHTML=items.map(cardHTML).join('')||'<div style="color:var(--tx3);text-align:center;padding:20px;font-size:.8rem;">Glissez des tâches ici</div>';
+    document.getElementById('kc-'+s).textContent=items.length})}
+function kOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
+function kLeave(e){e.currentTarget.classList.remove('dragover')}
+function kDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.status=e.currentTarget.dataset.st;persist();renderAll()}dragId=null}
+
+/* ═══ LIST ═══ */
+function renderList(){
+  const f=filt().sort((a,b)=>PO[a.prio]-PO[b.prio]);
+  document.getElementById('ls-body').innerHTML=f.map(t=>{
+    const d=t.status==='done';
+    const dots=Array(PN[t.prio]||1).fill('<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--or)"></span>').join('');
+    return `<tr>
+      <td><div class="ls-chk ${d?'on':''}" onclick="toggleDone('${t.id}')"></div></td>
+      <td class="${d?'ls-done':''}">${esc(t.title)}</td>
+      <td><span class="badge b-${t.cat}">${CL[t.cat]||t.cat}</span></td>
+      <td><span style="display:flex;align-items:center;gap:4px">${dots}<span style="margin-left:4px;font-size:.78rem;color:var(--tx2)">${PL[t.prio]||t.prio}</span></span></td>
+      <td style="color:var(--tx3)">${esc(t.dur||'—')}</td>
+      <td style="color:var(--tx3)">${t.due||'—'}</td>
+      <td><button class="ls-del" onclick="delTask('${t.id}')">&#10005;</button></td>
+    </tr>`}).join('')}
+
+/* ═══ CALENDAR ═══ */
+function weekDates(off){const n=new Date(),d=n.getDay(),m=new Date(n);m.setDate(n.getDate()-(d===0?6:d-1)+off*7);return Array.from({length:7},(_,i)=>{const x=new Date(m);x.setDate(m.getDate()+i);return x})}
+const HOURS=Array.from({length:14},(_,i)=>i+7);
+
+function renderCalendar(){
+  const dates=weekDates(calOff),today=dk(new Date());
+  const d0=dates[0],d6=dates[6];
+  document.getElementById('cal-label').textContent=d0.getDate()+' '+MOIS[d0.getMonth()]+' — '+d6.getDate()+' '+MOIS[d6.getMonth()]+' '+d6.getFullYear();
+
+  // Unplanned
+  const unpl=filt().filter(t=>!t.calDay&&t.status!=='done');
+  document.getElementById('cal-unpl').innerHTML=unpl.map(t=>`<div class="cal-mini" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="cal-mini-t">${esc(t.title)}</div><div class="cal-mini-s">${CL[t.cat]||''} · ${t.dur||'—'}</div></div>`).join('')||'<div style="color:var(--tx3);padding:12px;font-size:.78rem;text-align:center">Aucune tâche</div>';
+
+  // Header
+  document.getElementById('cal-hdr').innerHTML='<div class="cal-hdr-time"></div>'+dates.map((d,i)=>`<div class="cal-hdr-day ${dk(d)===today?'today':''}">${JOURS[i]}<span class="num">${d.getDate()}</span></div>`).join('');
+
+  // Body
+  const timeCol=HOURS.map(h=>`<div class="cal-time-slot">${String(h).padStart(2,'0')}h</div>`).join('');
+  const dayCols=dates.map(d=>{
+    const key=dk(d);
+    const dayTasks=filt().filter(t=>t.calDay===key);
+    const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');
+    const evts=dayTasks.map(t=>{
+      const h=t.calHour||7;
+      const top=(h-7)*48;
+      return `<div class="cal-evt" style="top:${top}px;height:46px" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${esc(t.title)}</div>`}).join('');
+    return `<div class="cal-day-col" data-day="${key}" ondragover="cdOver(event)" ondragleave="cdLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
+
+  document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
+}
+function calNav(dir){calOff+=dir;renderCalendar()}
+function calMode(m){calView=m;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day',month:'cal-btn-month'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
+function cdOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
+function cdLeave(e){e.currentTarget.classList.remove('dragover')}
+function cdDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;
+  const t=tasks.find(x=>x.id===dragId);
+  if(t){
+    const col=e.currentTarget.closest('.cal-day-col');
+    if(col){
+      t.calDay=col.dataset.day;
+      const rect=col.getBoundingClientRect();
+      const y=e.clientY-rect.top+col.parentElement?.parentElement?.scrollTop||0;
+      t.calHour=Math.min(20,Math.max(7,Math.floor(y/48)+7));
+    }
+    persist();renderAll()}dragId=null}
+function cuOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
+function cuLeave(e){e.currentTarget.classList.remove('dragover')}
+function cuDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.calDay=null;t.calHour=null;persist();renderAll()}dragId=null}
+
+/* ═══ EISENHOWER ═══ */
+function renderEisenhower(){
+  ['do','plan','delegate','eliminate'].forEach(q=>{
+    const items=filt().filter(t=>t.eq===q).sort((a,b)=>PO[a.prio]-PO[b.prio]);
+    document.getElementById('eq-'+q).innerHTML=items.map(t=>`<div class="eq-card" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">
+      <span class="badge b-${t.cat}" style="font-size:.6rem">${CL[t.cat]||t.cat}</span>
+      <span class="eq-card-t">${esc(t.title)}</span>
+      <button class="eq-card-x" onclick="delTask('${t.id}')">&#10005;</button>
+    </div>`).join('')||'<div class="eq-empty">Glissez des tâches ici</div>';
+    document.getElementById('ec-'+q).textContent=items.length})}
+function eOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
+function eLeave(e){e.currentTarget.classList.remove('dragover')}
+function eDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.eq=e.currentTarget.dataset.eq;persist();renderAll()}dragId=null}
+
+/* ═══ DASHBOARD ═══ */
+function renderDashboard(){
+  const all=tasks.length,done=tasks.filter(t=>t.status==='done').length,doing=tasks.filter(t=>t.status==='doing').length,todo=tasks.filter(t=>t.status==='todo').length;
+  const pct=all?Math.round(done/all*100):0;
+
+  const cats=['travail','personnel','sante','urgent','apprentissage'];
+  const catColors={travail:'var(--amber)',personnel:'var(--blue)',sante:'var(--green)',urgent:'var(--red)',apprentissage:'var(--or3)'};
+  const catBars=cats.map(c=>{const n=tasks.filter(t=>t.cat===c).length;return `<div class="dc-bar-r"><span class="lb">${CL[c]}</span><div class="bar"><div class="fill" style="width:${all?n/all*100:0}%;background:${catColors[c]}"></div></div><span class="vl">${n}</span></div>`}).join('');
+
+  const prios=['critique','haute','moyenne','moderee','basse'];
+  const prioColors={critique:'var(--red)',haute:'var(--or)',moyenne:'var(--yellow)',moderee:'var(--blue)',basse:'var(--green)'};
+  const prioBars=prios.map(p=>{const n=tasks.filter(t=>t.prio===p).length;return `<div class="dc-bar-r"><span class="lb">${PL[p]}</span><div class="bar"><div class="fill" style="width:${all?n/all*100:0}%;background:${prioColors[p]}"></div></div><span class="vl">${n}</span></div>`}).join('');
+
+  const eqs=['do','plan','delegate','eliminate'];
+  const eqColors={do:'var(--or)',plan:'var(--blue)',delegate:'var(--yellow)',eliminate:'var(--tx3)'};
+  const eqBars=eqs.map(q=>{const n=tasks.filter(t=>t.eq===q).length;return `<div class="dc-bar-r"><span class="lb">${EL[q]}</span><div class="bar"><div class="fill" style="width:${all?n/all*100:0}%;background:${eqColors[q]}"></div></div><span class="vl">${n}</span></div>`}).join('');
+
+  // Weekly activity
+  const wk=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);wk.push({label:JOURS[(d.getDay()+6)%7],key:dk(d),count:tasks.filter(t=>t.calDay===dk(d)&&t.status==='done').length})}
+  const mx=Math.max(1,...wk.map(w=>w.count));
+  const wkBars=wk.map(w=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="width:100%;height:80px;display:flex;align-items:flex-end;justify-content:center"><div style="width:22px;background:var(--or);border-radius:4px 4px 0 0;height:${w.count/mx*100}%;min-height:${w.count?4:0}px;transition:.4s"></div></div><span style="font-size:.68rem;color:var(--tx3)">${w.label}</span></div>`).join('');
+
+  // Habits
+  const today=new Date();
+  const habitHTML=habits.map((h,hi)=>{
+    let streak=0;const d=new Date();while(h.checks[dk(d)]){streak++;d.setDate(d.getDate()-1)}
+    const dots=Array.from({length:7},(_,i)=>{const dd=new Date(today);dd.setDate(today.getDate()-6+i);const on=h.checks[dk(dd)]?'on':'';return `<div class="dc-habit-dot ${on}" style="cursor:pointer" onclick="toggleHabit(${hi},'${dk(dd)}')"></div>`}).join('');
+    return `<div class="dc-row"><span style="font-size:.84rem;flex:1">${esc(h.name)}</span><div class="dc-habit-dots">${dots}</div><span class="dc-streak">${streak>0?'&#128293; '+streak+'j':''}</span></div>`}).join('');
+
+  // Upcoming
+  const upcoming=tasks.filter(t=>t.due&&t.status!=='done').sort((a,b)=>a.due.localeCompare(b.due)).slice(0,5);
+  const upHTML=upcoming.map(t=>{
+    const dl=Math.ceil((new Date(t.due)-new Date())/864e5);
+    const col=dl<0?'var(--red)':dl<=2?'var(--or)':'var(--tx2)';
+    return `<div class="dc-row"><span class="badge b-${t.cat}" style="font-size:.58rem">${CL[t.cat]}</span><span style="flex:1;font-size:.82rem">${esc(t.title)}</span><span style="font-size:.76rem;color:${col}">${dl<0?'En retard':dl===0?"Aujourd'hui":dl+'j'}</span></div>`}).join('')||'<div style="color:var(--tx3);font-size:.82rem;padding:8px">Aucune échéance</div>';
+
+  document.getElementById('dash').innerHTML=`
+    <div class="dc"><div class="dc-t">Progression globale</div><div class="dc-big">${pct}%</div><div class="dc-sub">${done} terminée${done>1?'s':''} sur ${all}</div>
+      <div style="display:flex;gap:16px;margin-top:14px">
+        <div style="font-size:.82rem"><span style="color:var(--or);font-weight:700">${todo}</span> <span style="color:var(--tx3)">à faire</span></div>
+        <div style="font-size:.82rem"><span style="color:var(--blue);font-weight:700">${doing}</span> <span style="color:var(--tx3)">en cours</span></div>
+        <div style="font-size:.82rem"><span style="color:var(--green);font-weight:700">${done}</span> <span style="color:var(--tx3)">terminé</span></div>
+      </div></div>
+    <div class="dc"><div class="dc-t">Par catégorie</div>${catBars}</div>
+    <div class="dc"><div class="dc-t">Par priorité</div>${prioBars}</div>
+    <div class="dc"><div class="dc-t">Matrice Eisenhower</div>${eqBars}</div>
+    <div class="dc"><div class="dc-t">Activité de la semaine</div><div style="display:flex;gap:4px;align-items:flex-end;height:110px">${wkBars}</div></div>
+    <div class="dc"><div class="dc-t">Habitudes récurrentes</div>${habitHTML}
+      <button onclick="addHabit()" style="margin-top:10px;padding:6px 14px;border:1px solid var(--brd);border-radius:6px;background:var(--surf2);color:var(--tx2);cursor:pointer;font-size:.78rem">+ Ajouter une habitude</button></div>
+    <div class="dc"><div class="dc-t">Échéances proches</div>${upHTML}</div>`;
+}
+function toggleHabit(hi,key){habits[hi].checks[key]=!habits[hi].checks[key];if(!habits[hi].checks[key])delete habits[hi].checks[key];persist();renderDashboard()}
+function addHabit(){const n=prompt('Nom de l\'habitude :');if(n&&n.trim()){habits.push({name:n.trim(),checks:{}});persist();renderDashboard()}}
+
+/* ═══ RENDER ALL ═══ */
+function renderAll(){renderSidebar();renderKanban();renderList();renderCalendar();renderEisenhower();renderDashboard()}
+
+/* ═══ TOAST ═══ */
+function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;document.getElementById('toasts').appendChild(e);setTimeout(()=>e.remove(),3e3)}
+
+/* ═══ INIT ═══ */
+renderAll();
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))openModal()});
+</script>
+</body>
+</html>
