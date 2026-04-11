@@ -68,20 +68,20 @@
   <div class="content">
     <div id="v-focus" class="vw act"><div class="focus" id="focus-content"></div></div>
     <div id="v-kanban" class="vw"><div class="kb">
-      <div class="kb-col col-todo" data-st="todo" ondragover="kOver(event)" ondragleave="kLeave(event)" ondrop="kDrop(event)"><div class="kb-hd">&#9898; À faire <span class="kb-cnt" id="kc-todo">0</span></div><div class="kb-cards" id="k-todo"></div></div>
-      <div class="kb-col col-doing" data-st="doing" ondragover="kOver(event)" ondragleave="kLeave(event)" ondrop="kDrop(event)"><div class="kb-hd">&#128992; En cours <span class="kb-cnt" id="kc-doing">0</span></div><div class="kb-cards" id="k-doing"></div></div>
-      <div class="kb-col col-done" data-st="done" ondragover="kOver(event)" ondragleave="kLeave(event)" ondrop="kDrop(event)"><div class="kb-hd">&#9989; Terminé <span class="kb-cnt" id="kc-done">0</span></div><div class="kb-cards" id="k-done"></div></div>
+      <div class="kb-col col-todo" data-st="todo" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="kDrop(event)"><div class="kb-hd">&#9898; À faire <span class="kb-cnt" id="kc-todo">0</span></div><div class="kb-cards" id="k-todo"></div></div>
+      <div class="kb-col col-doing" data-st="doing" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="kDrop(event)"><div class="kb-hd">&#128992; En cours <span class="kb-cnt" id="kc-doing">0</span></div><div class="kb-cards" id="k-doing"></div></div>
+      <div class="kb-col col-done" data-st="done" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="kDrop(event)"><div class="kb-hd">&#9989; Terminé <span class="kb-cnt" id="kc-done">0</span></div><div class="kb-cards" id="k-done"></div></div>
     </div></div>
     <div id="v-calendar" class="vw"><div class="cal-w">
-      <div class="cal-side" id="cal-side" ondragover="cuOver(event)" ondragleave="cuLeave(event)" ondrop="cuDrop(event)"><div class="cal-side-hd">Tâches non planifiées</div><div class="cal-side-list" id="cal-unpl"></div></div>
+      <div class="cal-side" id="cal-side" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cuDrop(event)"><div class="cal-side-hd">Tâches non planifiées</div><div class="cal-side-list" id="cal-unpl"></div></div>
       <div class="cal-main"><div class="cal-toolbar"><button onclick="calNav(-1)">&#8592;</button><span id="cal-label"></span><button onclick="calNav(1)">&#8594;</button><button class="act" id="cal-btn-sem" onclick="calMode('week')">Semaine</button><button id="cal-btn-day" onclick="calMode('day')">Jour</button></div>
       <div class="cal-grid"><div class="cal-hdr" id="cal-hdr"></div><div class="cal-body" id="cal-body"></div></div></div>
     </div></div>
     <div id="v-eisenhower" class="vw"><div class="ei">
-      <div class="eq eq-do" data-eq="do" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#128314; Faire maintenant <span class="eq-cnt" id="ec-do">0</span></div><div class="eq-cards" id="eq-do"></div></div>
-      <div class="eq eq-plan" data-eq="plan" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#9200; Planifier <span class="eq-cnt" id="ec-plan">0</span></div><div class="eq-cards" id="eq-plan"></div></div>
-      <div class="eq eq-delegate" data-eq="delegate" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#128260; Déléguer <span class="eq-cnt" id="ec-delegate">0</span></div><div class="eq-cards" id="eq-delegate"></div></div>
-      <div class="eq eq-eliminate" data-eq="eliminate" ondragover="eOver(event)" ondragleave="eLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#128465;&#65039; Éliminer <span class="eq-cnt" id="ec-eliminate">0</span></div><div class="eq-cards" id="eq-eliminate"></div></div>
+      <div class="eq eq-do" data-eq="do" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#128314; Faire maintenant <span class="eq-cnt" id="ec-do">0</span></div><div class="eq-cards" id="eq-do"></div></div>
+      <div class="eq eq-plan" data-eq="plan" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#9200; Planifier <span class="eq-cnt" id="ec-plan">0</span></div><div class="eq-cards" id="eq-plan"></div></div>
+      <div class="eq eq-delegate" data-eq="delegate" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#128260; Déléguer <span class="eq-cnt" id="ec-delegate">0</span></div><div class="eq-cards" id="eq-delegate"></div></div>
+      <div class="eq eq-eliminate" data-eq="eliminate" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#128465;&#65039; Éliminer <span class="eq-cnt" id="ec-eliminate">0</span></div><div class="eq-cards" id="eq-eliminate"></div></div>
     </div></div>
     <div id="v-notes" class="vw"><div class="notes-wrap">
       <div class="notes-side" id="notes-side"><div class="notes-toolbar"><div class="notes-cats" id="notes-cats">
