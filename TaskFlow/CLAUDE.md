@@ -27,17 +27,18 @@ Interface dark/light avec theme orange, optimisee mobile-first.
 
 ## Structure du projet
 
-Tout le code est dans un seul fichier `index.html` (~900 lignes) :
-- Lignes 1-15 : Head, meta PWA, imports CDN
-- Lignes 16-485 : CSS (variables, composants, responsive, animations)
-- Lignes 486-490 : Config Supabase
-- Lignes 491-540 : Variables globales, fonctions CRUD (tasks, habits, notes)
-- Lignes 541-680 : Navigation, modales, logique UI
-- Lignes 681-850+ : Fonctions de rendu par vue
+Le code est decoupe en 4 fichiers principaux :
+- `index.html` (~156 lignes) : structure HTML pure, modales, navigation
+- `style.css` (~332 lignes) : tout le CSS (variables, composants, responsive)
+- `js/db.js` (~33 lignes) : config Supabase, mapping DB/app, fonctions CRUD
+- `js/app.js` (~387 lignes) : variables, constantes, navigation, vues, drag & drop, init
+
+Ordre de chargement des scripts : supabase CDN → chart.js CDN → db.js → app.js
 
 Autres fichiers :
 - `manifest.json` : config PWA
 - `icon-192.svg`, `icon-512.svg` : icones de l'app
+- `CLAUDE.md` : ce fichier
 
 ## Vues de l'application
 
