@@ -207,13 +207,14 @@ function dayDate(off){const d=new Date();d.setDate(d.getDate()+off);return[d]}
 const HOURS=Array.from({length:14},(_,i)=>i+7);
 function renderCalendar(){
   const isDay=calView==='day',dates=isDay?dayDate(calOff):weekDates(calOff),today=dateKey(new Date());
+  const filtered=filt();
   if(isDay){const d=dates[0];document.getElementById('cal-label').textContent=JOURS_FULL[d.getDay()]+' '+d.getDate()+' '+MOIS[d.getMonth()]+' '+d.getFullYear()}
   else{const d0=dates[0],d6=dates[6];document.getElementById('cal-label').textContent=d0.getDate()+' '+MOIS[d0.getMonth()]+' — '+d6.getDate()+' '+MOIS[d6.getMonth()]+' '+d6.getFullYear()}
-  const unpl=filt().filter(t=>!t.calDay&&t.status!=='done');
+  const unpl=filtered.filter(t=>!t.calDay&&t.status!=='done');
   document.getElementById('cal-unpl').innerHTML=unpl.map(t=>`<div class="cal-mini" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="cal-mini-t">${escapeHtml(t.title)}</div><div class="cal-mini-s">${CATEGORY_LABELS[t.cat]||''} · ${t.dur||'—'}</div></div>`).join('')||'<div style="color:var(--tx3);padding:12px;font-size:.78rem;text-align:center">Aucune</div>';
   document.getElementById('cal-hdr').innerHTML='<div class="cal-hdr-time"></div>'+dates.map(d=>`<div class="cal-hdr-day ${dateKey(d)===today?'today':''}">${JOURS[(d.getDay()+6)%7]}<span class="num">${d.getDate()}</span></div>`).join('');
   const timeCol=HOURS.map(h=>`<div class="cal-time-slot">${String(h).padStart(2,'0')}h</div>`).join('');
-  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filt().filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:46px" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="cdOver(event)" ondragleave="cdLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
+  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:46px" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="cdOver(event)" ondragleave="cdLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
@@ -328,7 +329,20 @@ function renderStats(){
 }
 
 /* ═══ RENDER ALL ═══ */
-function renderAll(){renderSidebar();renderKanban();renderFocus();renderCalendar();renderEisenhower();renderNotes();renderHabits();renderStats()}
+const VIEW_RENDERERS={
+  focus:renderFocus,
+  kanban:renderKanban,
+  calendar:renderCalendar,
+  eisenhower:renderEisenhower,
+  notes:renderNotes,
+  habits:renderHabits,
+  stats:renderStats
+};
+function renderAll(){
+  renderSidebar();
+  const renderView=VIEW_RENDERERS[activeView];
+  if(renderView)renderView();
+}
 
 /* ═══ TOAST ═══ */
 function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;document.getElementById('toasts').appendChild(e);setTimeout(()=>e.remove(),3e3)}
