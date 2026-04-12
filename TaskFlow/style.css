@@ -10,7 +10,7 @@
   --amber:#d97706;--amberbg:rgba(217,119,6,.12);
   --purple:#a855f7;--purplebg:rgba(168,85,247,.12);
   --r:10px;--r2:14px;--sh:0 8px 32px rgba(0,0,0,.5);
-  --bnav:60px;
+  --bnav:60px;--topbar-h:135px;
 }
 [data-theme="light"]{
   --bg:#f5f5f4;--side:#ffffff;--surf:#ffffff;--surf2:#f5f5f4;--surf3:#e7e5e4;
@@ -82,7 +82,7 @@ button,input,textarea,select{font-family:inherit}
 .vw{display:none}.vw.act{display:block}
 
 /* ══ KANBAN ══ */
-.kb{display:flex;gap:14px;height:calc(100vh - 135px)}
+.kb{display:flex;gap:14px;height:calc(100vh - var(--topbar-h))}
 .kb-col{flex:1;background:var(--side);border:1px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;transition:.2s}
 .kb-col.dragover{border-color:var(--or);box-shadow:inset 0 0 30px var(--orGlow)}
 .kb-hd{padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--brd);font-weight:600;font-size:.88rem}
@@ -109,7 +109,7 @@ button,input,textarea,select{font-family:inherit}
 .card-recur{color:var(--or);font-size:.72rem;margin-left:auto}
 
 /* ══ CALENDAR ══ */
-.cal-w{display:flex;gap:14px;height:calc(100vh - 135px)}
+.cal-w{display:flex;gap:14px;height:calc(100vh - var(--topbar-h))}
 .cal-side{width:210px;background:var(--side);border:1px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
 .cal-side.dragover{border-color:var(--or)}
 .cal-side-hd{padding:12px 14px;font-weight:600;font-size:.84rem;border-bottom:1px solid var(--brd)}
@@ -141,7 +141,7 @@ button,input,textarea,select{font-family:inherit}
 .cal-evt{position:absolute;left:2px;right:2px;background:var(--or);border-radius:5px;padding:3px 6px;font-size:.67rem;color:#fff;font-weight:500;cursor:grab;z-index:2;overflow:hidden;border-left:3px solid var(--or3)}
 
 /* ══ EISENHOWER ══ */
-.ei{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 135px)}
+.ei{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - var(--topbar-h))}
 .eq{background:var(--side);border:2px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;transition:.2s}
 .eq.dragover{box-shadow:inset 0 0 30px var(--orGlow)}
 .eq-hd{padding:14px 16px;font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--brd)}
@@ -201,7 +201,7 @@ button,input,textarea,select{font-family:inherit}
 .focus-empty{color:var(--tx3);font-size:.84rem;padding:16px;text-align:center;background:var(--surf);border:1px solid var(--brd);border-radius:var(--r)}
 
 /* ══ NOTES ══ */
-.notes-wrap{display:flex;gap:14px;height:calc(100vh - 135px)}
+.notes-wrap{display:flex;gap:14px;height:calc(100vh - var(--topbar-h))}
 .notes-side{width:300px;background:var(--side);border:1px solid var(--brd);border-radius:var(--r2);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
 .notes-toolbar{padding:12px;border-bottom:1px solid var(--brd);display:flex;flex-direction:column;gap:8px}
 .notes-cats{display:flex;gap:4px;flex-wrap:wrap}

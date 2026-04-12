@@ -1,6 +1,6 @@
 let filterCategory='all',filterPriority='all',calOff=0,calView='week',dragId=null,editingId=null;
 let activeView='focus',selectedNoteId=null,notesCatFilter='all',notesDraft=null;
-let completionChart=null;
+let completionChart=null,streaksCache={};
 
 const escapeHtml=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
 function daysUntil(dateStr){const[y,m,d]=dateStr.split('-').map(Number);const t=new Date(y,m-1,d);const now=new Date();now.setHours(0,0,0,0);return Math.ceil((t-now)/864e5)}
@@ -30,6 +30,7 @@ applyTheme();
 
 /* ═══ NAV ═══ */
 function switchView(v){
+  if(document.querySelector('.modal-bg.open'))return;
   activeView=v;
   document.querySelectorAll('#vnav button').forEach(x=>x.classList.remove('act'));
   document.querySelectorAll('#bnav .bnav-btn').forEach(x=>x.classList.remove('act'));
@@ -193,10 +194,9 @@ function renderFocus(){
   const top3=scored.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=daysUntil(t.due);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
     return `<div class="focus-task${d?' done':''}"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div><button class="card-act-btn" onclick="openModal('${t.id}')" style="flex-shrink:0;opacity:.6" title="Modifier">&#9998;</button></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
   const habitPct=habits.length?Math.round(habitsToday/habits.length*100):0;
-  const habitsHTML=habits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=calcStreaks(hb);
+  const habitsHTML=habits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=streaksCache[hb.id]||{cur:0,best:0};
     return `<div class="focus-habit${checked?' checked':''}" onclick="toggleFocusHabit('${hb.id}')"><div class="focus-chk${checked?' on':''}"></div><span class="focus-habit-name">${escapeHtml(hb.name)}</span>${streak>0?'<span class="focus-habit-streak">&#128293; '+streak+'j</span>':''}</div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
-  const in3=new Date();in3.setDate(in3.getDate()+3);
-  const upcoming=tasks.filter(t=>t.due&&t.status!=='done'&&new Date(t.due)<=in3).sort((a,b)=>a.due.localeCompare(b.due));
+  const upcoming=tasks.filter(t=>t.due&&t.status!=='done'&&daysUntil(t.due)<=3).sort((a,b)=>a.due.localeCompare(b.due));
   const deadlines=upcoming.map(t=>{const dd=daysUntil(t.due);const u=dd<=1;const w=dd<=2&&!u;const cls=u?'urgent':w?'warning':'';const dc=u?'red':w?'orange':'normal';const dl=dd<0?'En retard':dd===0?"Aujourd'hui":dd===1?'Demain':dd+'j';
     return `<div class="focus-deadline ${cls}"><div class="focus-deadline-info"><div class="focus-deadline-title">${escapeHtml(t.title)}</div><div class="focus-deadline-cat"><span class="badge b-${t.cat}" style="font-size:.58rem">${CATEGORY_LABELS[t.cat]}</span></div></div><span class="focus-deadline-days ${dc}">${dl}</span></div>`}).join('')||'<div class="focus-empty">Aucune échéance dans les 3 prochains jours</div>';
   document.getElementById('focus-content').innerHTML=`<div class="focus-header"><div class="focus-greeting">${greeting}</div><div class="focus-date">${dateStr}</div><div class="focus-scores"><div class="focus-score-item"><div class="focus-score-num">${tasksDoneToday}</div><div class="focus-score-label">Tâches terminées</div></div><div class="focus-score-item"><div class="focus-score-num">${habitsToday}/${habits.length}</div><div class="focus-score-label">Habitudes du jour</div></div><div class="focus-score-item"><div class="focus-score-num">${pending.length}</div><div class="focus-score-label">Restantes</div></div></div></div>
@@ -310,7 +310,7 @@ function calcStreaks(h){
 function renderHabits(){
   const today=new Date();
   const html=habits.map(hb=>{
-    const{cur,best}=calcStreaks(hb);
+    const{cur,best}=streaksCache[hb.id]||{cur:0,best:0};
     const dots=Array.from({length:14},(_,i)=>{const dd=new Date(today);dd.setDate(today.getDate()-13+i);const k=dateKey(dd);const on=hb.checks&&hb.checks[k]?'on':'';const label=dd.getDate()+'/'+String(dd.getMonth()+1).padStart(2,'0');return`<div class="habit-card-dot ${on}" onclick="toggleHabitDay('${hb.id}','${k}')" title="${label}">${dd.getDate()}</div>`}).join('');
     return `<div class="habit-card"><div class="habit-card-header"><span class="habit-card-name">${escapeHtml(hb.name)}</span><button class="habit-card-del" onclick="delHabit('${hb.id}')">&#10005;</button></div><div class="habit-card-dots">${dots}</div><div class="habit-card-streak"><span>&#128293; Série actuelle : <strong>${cur}j</strong></span><span>&#127942; Record : <strong>${best}j</strong></span></div></div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
   document.getElementById('habits-content').innerHTML=`<div class="habits-grid">${html}</div><button onclick="openHabitModal()" style="margin-top:16px;padding:10px 20px;border:none;border-radius:8px;background:var(--or);color:#fff;font-weight:600;cursor:pointer;font-size:.86rem">+ Nouvelle habitude</button>`;
@@ -339,7 +339,7 @@ function renderStats(){
   const prioColors={critique:'var(--red)',haute:'var(--or)',moyenne:'var(--yellow)',moderee:'var(--blue)',basse:'var(--green)'};
   const prioBars=prios.map(p=>{const n=tasks.filter(t=>t.prio===p).length;return`<div class="st-bar-r"><span class="lb">${PRIORITY_LABELS[p]}</span><div class="bar"><div class="fill" style="width:${all?n/all*100:0}%;background:${prioColors[p]}"></div></div><span class="vl">${n}</span></div>`}).join('');
   // Habit streaks
-  const streakHTML=habits.map(hb=>{const{cur,best}=calcStreaks(hb);return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--brd)"><span style="flex:1;font-size:.84rem">${escapeHtml(hb.name)}</span><span style="font-size:.82rem;color:var(--or);font-weight:600">&#128293; ${cur}j</span><span style="font-size:.75rem;color:var(--tx3)">Record : ${best}j</span></div>`}).join('')||'<div style="color:var(--tx3);font-size:.82rem">Aucune habitude</div>';
+  const streakHTML=habits.map(hb=>{const{cur,best}=streaksCache[hb.id]||{cur:0,best:0};return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--brd)"><span style="flex:1;font-size:.84rem">${escapeHtml(hb.name)}</span><span style="font-size:.82rem;color:var(--or);font-weight:600">&#128293; ${cur}j</span><span style="font-size:.75rem;color:var(--tx3)">Record : ${best}j</span></div>`}).join('')||'<div style="color:var(--tx3);font-size:.82rem">Aucune habitude</div>';
 
   document.getElementById('stats-content').innerHTML=`<div class="stats-grid">
     <div class="st-card"><div class="st-card-t">Bilan du jour</div><div class="st-big">${tasksDoneToday+habitsToday}</div><div class="st-sub">${tasksDoneToday} tâche${tasksDoneToday>1?'s':''} complétée${tasksDoneToday>1?'s':''}, ${habitsToday} habitude${habitsToday>1?'s':''} cochée${habitsToday>1?'s':''}</div></div>
@@ -372,6 +372,7 @@ const VIEW_RENDERERS={
   stats:renderStats
 };
 function renderAll(){
+  habits.forEach(h=>{streaksCache[h.id]=calcStreaks(h)});
   renderSidebar();
   const renderView=VIEW_RENDERERS[activeView];
   if(renderView)renderView();
