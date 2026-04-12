@@ -38,6 +38,7 @@ Ordre de chargement des scripts : supabase CDN → chart.js CDN → db.js → ap
 Autres fichiers :
 - `manifest.json` : config PWA
 - `icon-192.svg`, `icon-512.svg` : icones de l'app
+- `serve.sh` : lance le serveur de dev local (live-server sur port 3000)
 - `CLAUDE.md` : ce fichier
 
 ## Vues de l'application
@@ -70,7 +71,8 @@ Tables :
 
 ## Comment tester
 
-Ouvrir `index.html` dans un navigateur (serveur local recommande pour le service worker).
+Lancer `bash serve.sh` (ou `npx live-server --port=3000`) depuis le dossier TaskFlow.
+Ouvre http://localhost:3000 avec rechargement automatique a chaque modification.
 Pas de build, pas de compilation, pas de npm.
 
 ## Points d'attention
@@ -78,4 +80,5 @@ Pas de build, pas de compilation, pas de npm.
 - La cle Supabase dans le code est la cle publique (anon key), pas un secret
 - Le fichier index.html est volumineux — editer avec precision (utiliser les numeros de ligne)
 - Pas de systeme de build : tout changement est immediat
-- `renderAll()` re-rend toutes les vues — appele apres chaque modification de donnees
+- `renderAll()` ne rend que la vue active (via VIEW_RENDERERS) — appele apres chaque modification de donnees
+- Gestion d'erreurs Supabase : toujours console.error() + toast() sur chaque appel CRUD
