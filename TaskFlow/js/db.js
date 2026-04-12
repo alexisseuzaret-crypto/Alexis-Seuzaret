@@ -21,7 +21,7 @@ async function updateTaskDB(t){const{error}=await sb.from('tasks').update(taskTo
 async function deleteTaskDB(id){const{error}=await sb.from('tasks').delete().eq('id',Number(id));if(error){console.error('deleteTask:',error);toast('Erreur suppression tâche')}}
 
 /* ═══ CRUD HABITS ═══ */
-async function loadHabits(){const{data,error}=await sb.from('habits').select('*').order('id',{ascending:true});if(error){console.error('loadHabits:',error);toast('Erreur chargement habitudes');return}habits=(data||[]).map(rowToHabit);if(habits.length===0){for(const name of['Sport','Lecture','Méditation']){const{data:d}=await sb.from('habits').insert({name,completions:{}}).select();if(d&&d[0])habits.push(rowToHabit(d[0]))}}}
+async function loadHabits(){const{data,error}=await sb.from('habits').select('*').order('id',{ascending:true});if(error){console.error('loadHabits:',error);toast('Erreur chargement habitudes');return}habits=(data||[]).map(rowToHabit)}
 async function updateHabit(h){const{error}=await sb.from('habits').update(habitToRow(h)).eq('id',Number(h.id));if(error){console.error('updateHabit:',error);toast('Erreur mise à jour habitude')}}
 async function insertHabit(h){const{data,error}=await sb.from('habits').insert(habitToRow(h)).select();if(error){console.error('insertHabit:',error);toast('Erreur création habitude');return null}if(data&&data[0])h.id=String(data[0].id);return h}
 async function deleteHabitDB(id){const{error}=await sb.from('habits').delete().eq('id',Number(id));if(error){console.error('deleteHabit:',error);toast('Erreur suppression habitude')}}

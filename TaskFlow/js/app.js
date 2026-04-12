@@ -1,8 +1,9 @@
 let filterCategory='all',filterPriority='all',calOff=0,calView='week',dragId=null,editingId=null;
-let activeView='focus',selectedNoteId=null,notesCatFilter='all';
+let activeView='focus',selectedNoteId=null,notesCatFilter='all',notesDraft=null;
 let completionChart=null;
 
 const escapeHtml=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
+function daysUntil(dateStr){const[y,m,d]=dateStr.split('-').map(Number);const t=new Date(y,m-1,d);const now=new Date();now.setHours(0,0,0,0);return Math.ceil((t-now)/864e5)}
 const PRIORITY_ORDER={critique:0,haute:1,moyenne:2,moderee:3,basse:4};
 const PRIORITY_LABELS={critique:'Critique',haute:'Haute',moyenne:'Moyenne',moderee:'Modérée',basse:'Basse'};
 const PRIORITY_DOTS={critique:5,haute:4,moyenne:3,moderee:2,basse:1};
@@ -59,7 +60,7 @@ function checkEiSugg(){
   const due=document.getElementById('f-due').value;
   const el=document.getElementById('ei-suggest');
   if(!due&&(prio==='moyenne'||prio==='haute')){el.style.display='none';eiSuggQ=null;return}
-  const days=due?Math.ceil((new Date(due)-new Date())/864e5):Infinity;
+  const days=due?daysUntil(due):Infinity;
   let suggestion=null;
   if(prio==='critique'&&days<=3)suggestion={q:'do',label:'Faire maintenant \uD83D\uDD34'};
   else if((prio==='haute'||prio==='critique')&&days<=7)suggestion={q:'plan',label:'Planifier \uD83D\uDD35'};
@@ -184,15 +185,15 @@ function renderFocus(){
   const tasksDoneToday=tasks.filter(t=>t.completedAt===today).length;
   const habitsToday=habits.filter(hb=>hb.checks&&hb.checks[today]).length;
   const pending=tasks.filter(t=>t.status!=='done');
-  const scored=pending.map(t=>{let s=(5-(PRIORITY_ORDER[t.prio]||2))*10;if(t.due){const d=Math.ceil((new Date(t.due)-now)/864e5);if(d<=0)s+=100;else if(d<=1)s+=80;else if(d<=3)s+=50;else if(d<=7)s+=20}if(t.eq==='do')s+=30;return{...t,_s:s}}).sort((a,b)=>b._s-a._s).slice(0,3);
-  const top3=scored.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=Math.ceil((new Date(t.due)-now)/864e5);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
+  const scored=pending.map(t=>{let s=(5-(PRIORITY_ORDER[t.prio]||2))*10;if(t.due){const d=daysUntil(t.due);if(d<=0)s+=100;else if(d<=1)s+=80;else if(d<=3)s+=50;else if(d<=7)s+=20}if(t.eq==='do')s+=30;return{...t,_s:s}}).sort((a,b)=>b._s-a._s).slice(0,3);
+  const top3=scored.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=daysUntil(t.due);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
     return `<div class="focus-task${d?' done':''}"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
   const habitPct=habits.length?Math.round(habitsToday/habits.length*100):0;
   const habitsHTML=habits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=calcStreaks(hb);
     return `<div class="focus-habit${checked?' checked':''}" onclick="toggleFocusHabit('${hb.id}')"><div class="focus-chk${checked?' on':''}"></div><span class="focus-habit-name">${escapeHtml(hb.name)}</span>${streak>0?'<span class="focus-habit-streak">&#128293; '+streak+'j</span>':''}</div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
   const in3=new Date();in3.setDate(in3.getDate()+3);
   const upcoming=tasks.filter(t=>t.due&&t.status!=='done'&&new Date(t.due)<=in3).sort((a,b)=>a.due.localeCompare(b.due));
-  const deadlines=upcoming.map(t=>{const dd=Math.ceil((new Date(t.due)-now)/864e5);const u=dd<=1;const w=dd<=2&&!u;const cls=u?'urgent':w?'warning':'';const dc=u?'red':w?'orange':'normal';const dl=dd<0?'En retard':dd===0?"Aujourd'hui":dd===1?'Demain':dd+'j';
+  const deadlines=upcoming.map(t=>{const dd=daysUntil(t.due);const u=dd<=1;const w=dd<=2&&!u;const cls=u?'urgent':w?'warning':'';const dc=u?'red':w?'orange':'normal';const dl=dd<0?'En retard':dd===0?"Aujourd'hui":dd===1?'Demain':dd+'j';
     return `<div class="focus-deadline ${cls}"><div class="focus-deadline-info"><div class="focus-deadline-title">${escapeHtml(t.title)}</div><div class="focus-deadline-cat"><span class="badge b-${t.cat}" style="font-size:.58rem">${CATEGORY_LABELS[t.cat]}</span></div></div><span class="focus-deadline-days ${dc}">${dl}</span></div>`}).join('')||'<div class="focus-empty">Aucune échéance dans les 3 prochains jours</div>';
   document.getElementById('focus-content').innerHTML=`<div class="focus-header"><div class="focus-greeting">${greeting}</div><div class="focus-date">${dateStr}</div><div class="focus-scores"><div class="focus-score-item"><div class="focus-score-num">${tasksDoneToday}</div><div class="focus-score-label">Tâches terminées</div></div><div class="focus-score-item"><div class="focus-score-num">${habitsToday}/${habits.length}</div><div class="focus-score-label">Habitudes du jour</div></div><div class="focus-score-item"><div class="focus-score-num">${pending.length}</div><div class="focus-score-label">Restantes</div></div></div></div>
   <div class="focus-section"><div class="focus-section-title"><span>&#127919;</span> Mes 3 priorités du jour</div>${top3}</div>
@@ -214,7 +215,7 @@ function renderCalendar(){
   document.getElementById('cal-unpl').innerHTML=unpl.map(t=>`<div class="cal-mini" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="cal-mini-t">${escapeHtml(t.title)}</div><div class="cal-mini-s">${CATEGORY_LABELS[t.cat]||''} · ${t.dur||'—'}</div></div>`).join('')||'<div style="color:var(--tx3);padding:12px;font-size:.78rem;text-align:center">Aucune</div>';
   document.getElementById('cal-hdr').innerHTML='<div class="cal-hdr-time"></div>'+dates.map(d=>`<div class="cal-hdr-day ${dateKey(d)===today?'today':''}">${JOURS[(d.getDay()+6)%7]}<span class="num">${d.getDate()}</span></div>`).join('');
   const timeCol=HOURS.map(h=>`<div class="cal-time-slot">${String(h).padStart(2,'0')}h</div>`).join('');
-  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:46px" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="cdOver(event)" ondragleave="cdLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
+  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:46px" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
@@ -248,16 +249,30 @@ function selectNote(id){
   renderNotes();
 }
 function deselectNote(){
-  selectedNoteId=null;document.getElementById('notes-form').style.display='none';document.getElementById('notes-empty-state').style.display='flex';
+  selectedNoteId=null;notesDraft=null;
+  document.getElementById('notes-form').style.display='none';document.getElementById('notes-empty-state').style.display='flex';
   document.getElementById('notes-side').classList.remove('hidden');
   if(window.innerWidth<=768)document.getElementById('notes-editor').classList.add('hidden');
   renderNotes();
 }
-async function createNote(){
-  const n={id:null,title:'',content:'',cat:'autre',createdAt:null,updatedAt:null};
-  const r=await insertNote(n);if(r){notes.unshift(r);selectNote(r.id)}
+function createNote(){
+  notesDraft={id:null,title:'',content:'',cat:'autre'};
+  selectedNoteId='draft';
+  document.getElementById('notes-empty-state').style.display='none';
+  document.getElementById('notes-form').style.display='flex';
+  document.getElementById('n-title').value='';document.getElementById('n-content').value='';document.getElementById('n-cat').value='autre';
+  if(window.innerWidth<=768){document.getElementById('notes-side').classList.add('hidden');document.getElementById('notes-editor').classList.remove('hidden')}
+  renderNotes();
+  setTimeout(()=>document.getElementById('n-title').focus(),50);
 }
 async function saveNote(){
+  if(selectedNoteId==='draft'){
+    const title=document.getElementById('n-title').value.trim(),content=document.getElementById('n-content').value,cat=document.getElementById('n-cat').value;
+    if(!title&&!content){toast('Note vide — non sauvegardée');deselectNote();return}
+    const n={id:null,title,content,cat,createdAt:null,updatedAt:null};
+    const r=await insertNote(n);if(r){notes.unshift(r);selectedNoteId=r.id;notesDraft=null;renderNotes();toast('Note créée ✓')}
+    return;
+  }
   const n=notes.find(x=>x.id===selectedNoteId);if(!n)return;
   n.title=document.getElementById('n-title').value.trim();n.content=document.getElementById('n-content').value;n.cat=document.getElementById('n-cat').value;
   await updateNoteDB(n);renderNotes();toast('Note enregistrée ✓');
@@ -396,4 +411,4 @@ initTouchDrag();
   setTimeout(checkDeadlines,2000);
   setInterval(checkDeadlines,36e5);
 })();
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeHabitModal();cancelConfirm();closeMore()}if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))fabAction()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeHabitModal();cancelConfirm();closeMore()}if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!document.querySelector('.modal-bg.open'))fabAction()});

@@ -1,84 +1,48 @@
-# TaskFlow — Organisateur personnel de productivite
+# Instructions Claude — Alexis Seuzaret @ Mister IA
 
-## Instructions pour Claude Code
+## Comportement
+- Réponds toujours en français
+- Pas de compliments ("Excellent !", "Bien sûr !", "Absolument !")
+- Va droit au but, sois précis et actionnable
+- Si mon idée est mauvaise ou qu'il y a une meilleure approche, dis-le directement
+- Pas d'intro ni de récap inutile
 
-- Apres chaque modification du code, mettre a jour ce fichier CLAUDE.md si la structure, les vues, les tables, ou les conventions ont change.
-- Sauvegarder en memoire les decisions importantes, les nouvelles fonctionnalites ajoutees, et les changements d'architecture.
-- Garder ce fichier comme source de verite sur l'etat actuel du projet.
-- Quand une erreur se produit (bug, mauvaise approche, code qui casse, mauvaise comprehension du besoin), sauvegarder la lecon en memoire (type feedback) avec : ce qui a echoue, pourquoi, et comment eviter ca a l'avenir. Consulter ces lecons avant de repeter une approche similaire.
-- Etre un partenaire critique et force de proposition, pas un simple executant :
-  - Quand Alexis propose une idee ou demande une feature, challenger l'approche si elle peut etre amelioree. Proposer des alternatives.
-  - Quand l'idee est vague, poser les bonnes questions pour clarifier le besoin, puis proposer 2-3 pistes concretes avec les pour/contre de chacune.
-  - Signaler proactivement les problemes (UX, performance, dette technique, accessibilite) meme si ce n'est pas demande.
-  - Apres une implementation, suggerer des ameliorations possibles pour la suite ("on pourrait aussi...").
-  - Rester direct et honnete : si une idee n'est pas bonne, le dire clairement avec une meilleure alternative.
+## Boot de session
+Au démarrage, lis automatiquement dans l'ordre :
+1. tasks/tasks.md — tâches en cours
+2. tasks/lessons.md — erreurs passées à éviter
+3. brain/projects/[projet actif].md — contexte projet
 
-## Description
+Confirme avec : "Contexte chargé : [projet] — [X tâches en cours]"
 
-Application web PWA de gestion de taches et productivite personnelle.
-Interface dark/light avec theme orange, optimisee mobile-first.
+## Niveaux d'autonomie
+- dispatch → agis directement sans confirmation
+- prep → prépare et montre-moi avant d'exécuter
+- yours → donne-moi les options, je décide
+
+Par défaut : mode prep pour toute action irréversible (delete, push, deploy).
 
 ## Stack technique
+- OS : Windows 11
+- Hébergement : Vercel uniquement (jamais Netlify)
+- Frontend : HTML/CSS/JS vanilla ou React selon le projet
+- Modèle : Opus 4.6
 
-- **Frontend** : HTML/CSS/JS vanilla (pas de framework, pas de build)
-- **Backend** : Supabase (BaaS) — auth implicite via anon key
-- **Librairies CDN** : Supabase JS v2, Chart.js v4
-- **PWA** : manifest.json + icones SVG, installable sur mobile
+## Règles de code
+- Tester le build local avant tout push Vercel
+- Commits en français, format conventionnel : feat/fix/chore/docs
+- Jamais de fichier créé à la racine ~/ sans raison
+- Commenter le code en français
 
-## Structure du projet
+## Contexte professionnel
+- Consultant IA en alternance ESSEC chez Mister IA
+- Missions : formations IA, webinaires, propales commerciales, outils internes
+- Interlocuteurs : voir brain/clients/
+- Projets actifs : voir brain/projects/
 
-Le code est decoupe en 4 fichiers principaux :
-- `index.html` (~156 lignes) : structure HTML pure, modales, navigation
-- `style.css` (~332 lignes) : tout le CSS (variables, composants, responsive)
-- `js/db.js` (~33 lignes) : config Supabase, mapping DB/app, fonctions CRUD
-- `js/app.js` (~387 lignes) : variables, constantes, navigation, vues, drag & drop, init
+## Self-improvement
+À chaque correction ou erreur détectée, ajoute dans tasks/lessons.md :
+[DATE] | ERREUR : ... | CAUSE : ... | RÈGLE : ...
 
-Ordre de chargement des scripts : supabase CDN → chart.js CDN → db.js → app.js
-
-Autres fichiers :
-- `manifest.json` : config PWA
-- `icon-192.svg`, `icon-512.svg` : icones de l'app
-- `serve.sh` : lance le serveur de dev local (live-server sur port 3000)
-- `CLAUDE.md` : ce fichier
-
-## Vues de l'application
-
-| Vue | Fonction render | Description |
-|-----|----------------|-------------|
-| Focus | `renderFocus()` | Taches du jour, vue par defaut |
-| Kanban | `renderKanban()` | Colonnes todo/doing/done |
-| Calendrier | `renderCalendar()` | Vue semaine/jour avec drag |
-| Eisenhower | `renderEisenhower()` | Matrice urgent/important |
-| Notes | `renderNotes()` | Notes par categorie |
-| Habitudes | `renderHabits()` | Suivi d'habitudes quotidiennes |
-| Stats | `renderStats()` | Graphiques Chart.js |
-
-## Base de donnees Supabase
-
-Tables :
-- `tasks` : taches (title, description, category, priority, duration, due_date, completed, status, quadrant, cal_day, cal_hour, completed_at, recurrence_type, recurrence_day)
-- `habits` : habitudes (name, completions — objet JSON de dates cochees)
-- `notes` : notes (title, content, category, created_at, updated_at)
-
-## Conventions
-
-- Langue de l'interface : francais
-- Commentaires dans le code : francais
-- Commits en francais
-- CSS : variables custom dans `:root`, theme dark par defaut, light via `[data-theme="light"]`
-- Noms de fonctions : camelCase, prefixes `render`, `load`, `insert`, `update`, `delete`
-- Mapping donnees : `rowToX()` (DB -> app) et `xToRow()` (app -> DB)
-
-## Comment tester
-
-Lancer `bash serve.sh` (ou `npx live-server --port=3000`) depuis le dossier TaskFlow.
-Ouvre http://localhost:3000 avec rechargement automatique a chaque modification.
-Pas de build, pas de compilation, pas de npm.
-
-## Points d'attention
-
-- La cle Supabase dans le code est la cle publique (anon key), pas un secret
-- Le fichier index.html est desormais leger (~156 lignes) grace au split CSS/JS
-- Pas de systeme de build : tout changement est immediat
-- `renderAll()` ne rend que la vue active (via VIEW_RENDERERS) — appele apres chaque modification de donnees
-- Gestion d'erreurs Supabase : toujours console.error() + toast() sur chaque appel CRUD
+À chaque fin de session importante, mets à jour brain/projects/[projet].md
+avec les décisions prises et l'état d'avancement.
