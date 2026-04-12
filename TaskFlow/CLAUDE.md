@@ -78,7 +78,7 @@ Pas de build, pas de compilation, pas de npm.
 ## Points d'attention
 
 - La cle Supabase dans le code est la cle publique (anon key), pas un secret
-- Le fichier index.html est volumineux — editer avec precision (utiliser les numeros de ligne)
+- Le fichier index.html est desormais leger (~156 lignes) grace au split CSS/JS
 - Pas de systeme de build : tout changement est immediat
 - `renderAll()` ne rend que la vue active (via VIEW_RENDERERS) — appele apres chaque modification de donnees
 - Gestion d'erreurs Supabase : toujours console.error() + toast() sur chaque appel CRUD
