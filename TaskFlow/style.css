@@ -156,6 +156,8 @@ button,input,textarea,select{font-family:inherit}
 .eq-card-t{flex:1;font-weight:500}
 .eq-card-x{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.85rem;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
 .eq-card-x:hover{color:var(--red)}
+.eq-card-done{opacity:.55}
+.eq-card-t-done{text-decoration:line-through}
 
 /* ══ FOCUS ══ */
 .focus{max-width:720px;margin:0 auto;width:100%}

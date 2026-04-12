@@ -136,8 +136,12 @@ async function toggleDone(id){
     t.status='done';t.completedAt=dateKey(new Date());
     renderAll();await updateTaskDB(t);
     if(t.recurrence&&t.recurrence!=='never'){
-      const nt={id:null,title:t.title,desc:t.desc,cat:t.cat,prio:t.prio,dur:t.dur,due:calcNextDue(t),status:'todo',eq:t.eq,calDay:null,calHour:null,completedAt:null,recurrence:t.recurrence,recurDay:t.recurDay};
-      const r=await insertTask(nt);if(r){tasks.push(r);renderAll();toast('Prochaine occurrence créée ✓')}
+      const nextDue=calcNextDue(t);
+      const alreadyExists=tasks.some(x=>x.title===t.title&&x.due===nextDue&&x.status!=='done');
+      if(!alreadyExists){
+        const nt={id:null,title:t.title,desc:t.desc,cat:t.cat,prio:t.prio,dur:t.dur,due:nextDue,status:'todo',eq:t.eq,calDay:null,calHour:null,completedAt:null,recurrence:t.recurrence,recurDay:t.recurDay};
+        const r=await insertTask(nt);if(r){tasks.push(r);renderAll();toast('Prochaine occurrence créée ✓')}
+      }
     }
   } else {t.status='todo';t.completedAt=null;renderAll();await updateTaskDB(t)}
 }
@@ -187,7 +191,7 @@ function renderFocus(){
   const pending=tasks.filter(t=>t.status!=='done');
   const scored=pending.map(t=>{let s=(5-(PRIORITY_ORDER[t.prio]||2))*10;if(t.due){const d=daysUntil(t.due);if(d<=0)s+=100;else if(d<=1)s+=80;else if(d<=3)s+=50;else if(d<=7)s+=20}if(t.eq==='do')s+=30;return{...t,_s:s}}).sort((a,b)=>b._s-a._s).slice(0,3);
   const top3=scored.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=daysUntil(t.due);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
-    return `<div class="focus-task${d?' done':''}"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
+    return `<div class="focus-task${d?' done':''}"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div><button class="card-act-btn" onclick="openModal('${t.id}')" style="flex-shrink:0;opacity:.6" title="Modifier">&#9998;</button></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
   const habitPct=habits.length?Math.round(habitsToday/habits.length*100):0;
   const habitsHTML=habits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=calcStreaks(hb);
     return `<div class="focus-habit${checked?' checked':''}" onclick="toggleFocusHabit('${hb.id}')"><div class="focus-chk${checked?' on':''}"></div><span class="focus-habit-name">${escapeHtml(hb.name)}</span>${streak>0?'<span class="focus-habit-streak">&#128293; '+streak+'j</span>':''}</div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
@@ -219,7 +223,7 @@ function renderCalendar(){
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
-function calMode(m){calView=m;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
+function calMode(m){calView=m;calOff=0;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
 /* cdOver/cdLeave remplaces par dragOver/dragLeave */
 async function cdDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){const col=e.currentTarget.closest('.cal-day-col');if(col){t.calDay=col.dataset.day;const rect=col.getBoundingClientRect();t.calHour=Math.min(20,Math.max(7,Math.floor((e.clientY-rect.top)/48)+7))}renderAll();await updateTaskDB(t)}dragId=null}
 /* cuOver/cuLeave remplaces par dragOver/dragLeave */
@@ -229,7 +233,7 @@ async function cuDrop(e){e.preventDefault();e.currentTarget.classList.remove('dr
 function renderEisenhower(){
   ['do','plan','delegate','eliminate'].forEach(q=>{
     const items=filt().filter(t=>t.eq===q).sort((a,b)=>PRIORITY_ORDER[a.prio]-PRIORITY_ORDER[b.prio]);
-    document.getElementById('eq-'+q).innerHTML=items.map(t=>{const ri=t.recurrence&&t.recurrence!=='never'?' \uD83D\uDD04':'';return`<div class="eq-card" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><span class="badge b-${t.cat}" style="font-size:.6rem">${CATEGORY_LABELS[t.cat]||t.cat}</span><span class="eq-card-t">${escapeHtml(t.title)}${ri}</span><button class="eq-card-x" onclick="openModal('${t.id}')">&#9998;</button><button class="eq-card-x" onclick="delTask('${t.id}')">&#10005;</button></div>`}).join('')||'<div style="color:var(--tx3);font-size:.78rem;padding:16px;text-align:center">Glissez des tâches ici</div>';
+    document.getElementById('eq-'+q).innerHTML=items.map(t=>{const ri=t.recurrence&&t.recurrence!=='never'?' \uD83D\uDD04':'';const done=t.status==='done';return`<div class="eq-card${done?' eq-card-done':''}" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><button class="eq-card-x" onclick="toggleDone('${t.id}')" title="${done?'Marquer à faire':'Marquer terminé'}" style="color:${done?'var(--green)':'var(--tx3)'};font-size:1rem">${done?'&#9989;':'&#9711;'}</button><span class="badge b-${t.cat}" style="font-size:.6rem">${CATEGORY_LABELS[t.cat]||t.cat}</span><span class="eq-card-t${done?' eq-card-t-done':''}">${escapeHtml(t.title)}${ri}</span><button class="eq-card-x" onclick="openModal('${t.id}')">&#9998;</button><button class="eq-card-x" onclick="delTask('${t.id}')">&#10005;</button></div>`}).join('')||'<div style="color:var(--tx3);font-size:.78rem;padding:16px;text-align:center">Glissez des tâches ici</div>';
     document.getElementById('ec-'+q).textContent=items.length})}
 /* eOver/eLeave remplaces par dragOver/dragLeave */
 async function eDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.eq=e.currentTarget.dataset.eq;renderAll();await updateTaskDB(t)}dragId=null}
@@ -238,9 +242,21 @@ async function eDrop(e){e.preventDefault();e.currentTarget.classList.remove('dra
 document.getElementById('notes-cats').addEventListener('click',e=>{const b=e.target.closest('.notes-cat-btn');if(!b)return;notesCatFilter=b.dataset.nc;document.querySelectorAll('.notes-cat-btn').forEach(x=>x.classList.remove('act'));b.classList.add('act');renderNotes()});
 function renderNotes(){
   const filtered=notesCatFilter==='all'?notes:notes.filter(n=>n.cat===notesCatFilter);
-  document.getElementById('notes-list').innerHTML=filtered.map(n=>`<div class="note-item${selectedNoteId===n.id?' active':''}" onclick="selectNote('${n.id}')"><div class="note-item-title">${escapeHtml(n.title||'Sans titre')}</div><div class="note-item-preview">${escapeHtml((n.content||'').slice(0,80))}</div><div class="note-item-meta"><span class="badge b-${n.cat}" style="font-size:.55rem">${NOTE_CATEGORY_LABELS[n.cat]||n.cat}</span></div></div>`).join('')||'<div style="color:var(--tx3);padding:20px;text-align:center;font-size:.84rem">Aucune note</div>';
+  document.getElementById('notes-list').innerHTML=filtered.map(n=>{const dateStr=n.updatedAt?new Date(n.updatedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';return`<div class="note-item${selectedNoteId===n.id?' active':''}" onclick="selectNote('${n.id}')"><div class="note-item-title">${escapeHtml(n.title||'Sans titre')}</div><div class="note-item-preview">${escapeHtml((n.content||'').slice(0,80))}</div><div class="note-item-meta"><span class="badge b-${n.cat}" style="font-size:.55rem">${NOTE_CATEGORY_LABELS[n.cat]||n.cat}</span>${dateStr?`<span style="margin-left:auto;font-size:.65rem;color:var(--tx3)">${dateStr}</span>`:''}</div></div>`}).join('')||'<div style="color:var(--tx3);padding:20px;text-align:center;font-size:.84rem">Aucune note</div>';
 }
 function selectNote(id){
+  if(selectedNoteId&&selectedNoteId!==id){
+    if(selectedNoteId==='draft'){
+      const t=document.getElementById('n-title').value.trim(),c=document.getElementById('n-content').value;
+      if((t||c)&&!confirm('Note en cours non sauvegardée. Abandonner ?')){return}
+      notesDraft=null;
+    } else {
+      const cur=notes.find(x=>x.id===selectedNoteId);
+      if(cur&&(document.getElementById('n-title').value.trim()!==cur.title||document.getElementById('n-content').value!==cur.content)){
+        if(!confirm('Modifications non sauvegardées. Continuer quand même ?')){return}
+      }
+    }
+  }
   selectedNoteId=id;const n=notes.find(x=>x.id===id);if(!n)return;
   document.getElementById('notes-empty-state').style.display='none';
   document.getElementById('notes-form').style.display='flex';
@@ -284,7 +300,9 @@ async function deleteNote(){
 
 /* ═══ HABITS VIEW ═══ */
 function calcStreaks(h){
-  let cur=0;const d=new Date();while(h.checks&&h.checks[dateKey(d)]){cur++;d.setDate(d.getDate()-1)}
+  let cur=0;const d=new Date();
+  if(!(h.checks&&h.checks[dateKey(d)]))d.setDate(d.getDate()-1);
+  while(h.checks&&h.checks[dateKey(d)]){cur++;d.setDate(d.getDate()-1)}
   const dates=Object.keys(h.checks||{}).filter(k=>h.checks[k]).sort();let best=0,run=0;
   for(let i=0;i<dates.length;i++){if(i===0)run=1;else{const diff=Math.round((new Date(dates[i])-new Date(dates[i-1]))/864e5);run=diff===1?run+1:1}if(run>best)best=run}
   return{cur,best};
@@ -360,7 +378,7 @@ function renderAll(){
 }
 
 /* ═══ TOAST ═══ */
-function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;document.getElementById('toasts').appendChild(e);setTimeout(()=>e.remove(),3e3)}
+function toast(m){const box=document.getElementById('toasts');if([...box.children].some(x=>x.textContent===m))return;while(box.children.length>=3)box.removeChild(box.firstChild);const e=document.createElement('div');e.className='toast';e.textContent=m;box.appendChild(e);setTimeout(()=>e.remove(),3e3)}
 
 /* ═══ NOTIFICATIONS ═══ */
 function initNotifications(){
