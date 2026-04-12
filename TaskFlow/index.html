@@ -54,6 +54,7 @@
   <div class="topbar">
     <div class="top-left"><h1>TaskFlow</h1><p id="top-sub">0 tâches en attente</p></div>
     <button class="theme-btn" id="theme-btn" title="Mode clair / sombre">&#9789;</button>
+    <div class="search-wrap"><span class="search-icon">&#128269;</span><input type="search" id="search-input" class="search-input" placeholder="Rechercher…" oninput="onSearch(this.value)" autocomplete="off"><div id="search-results" class="search-results"></div></div>
     <div class="top-nav" id="vnav">
       <button class="act" data-v="focus">Focus</button>
       <button data-v="kanban">Kanban</button>
@@ -74,8 +75,9 @@
     </div></div>
     <div id="v-calendar" class="vw"><div class="cal-w">
       <div class="cal-side" id="cal-side" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cuDrop(event)"><div class="cal-side-hd">Tâches non planifiées</div><div class="cal-side-list" id="cal-unpl"></div></div>
-      <div class="cal-main"><div class="cal-toolbar"><button onclick="calNav(-1)">&#8592;</button><span id="cal-label"></span><button onclick="calNav(1)">&#8594;</button><button class="act" id="cal-btn-sem" onclick="calMode('week')">Semaine</button><button id="cal-btn-day" onclick="calMode('day')">Jour</button></div>
-      <div class="cal-grid"><div class="cal-hdr" id="cal-hdr"></div><div class="cal-body" id="cal-body"></div></div></div>
+      <div class="cal-main"><div class="cal-toolbar"><button onclick="calNav(-1)">&#8592;</button><span id="cal-label"></span><button onclick="calNav(1)">&#8594;</button><button class="act" id="cal-btn-sem" onclick="calMode('week')">Semaine</button><button id="cal-btn-day" onclick="calMode('day')">Jour</button><button id="cal-btn-month" onclick="calMode('month')">Mois</button></div>
+      <div class="cal-grid" id="cal-week-day-grid"><div class="cal-hdr" id="cal-hdr"></div><div class="cal-body" id="cal-body"></div></div>
+      <div id="cal-month-grid" style="display:none"></div></div>
     </div></div>
     <div id="v-eisenhower" class="vw"><div class="ei">
       <div class="eq eq-do" data-eq="do" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="eDrop(event)"><div class="eq-hd">&#128314; Faire maintenant <span class="eq-cnt" id="ec-do">0</span></div><div class="eq-cards" id="eq-do"></div></div>
