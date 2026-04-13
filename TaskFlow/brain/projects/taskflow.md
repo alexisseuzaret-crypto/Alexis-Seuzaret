@@ -11,12 +11,13 @@ Stack : HTML/CSS/JS vanilla + Supabase + Chart.js
 - Hébergement : Vercel
 - Repo : [à compléter]
 
-## État actuel (2026-04-12)
+## État actuel (2026-04-13)
 - Setup Claude Code terminé (brain/, tasks/, CLAUDE.md, Context7 MCP)
 - Audit complet réalisé — 25 problèmes identifiés
 - Phase 1 terminée et déployée : 5 bugs critiques (cdOver, note draft, habitudes, timezone, raccourci)
 - Phase 2 terminée et déployée : 8 correctifs UX/bugs modérés
 - Phase 3 terminée et déployée : refactoring (--topbar-h, streaksCache, switchView guard, daysUntil partout)
+- Phase 4 terminée et déployée : SW/PWA, recherche globale, vue mois, isMobile réactif, theme-color adaptatif
 
 ## Fichiers clés
 - index.html (~156 lignes) : structure HTML, modales, navigation
