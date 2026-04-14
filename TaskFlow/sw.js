@@ -1,4 +1,4 @@
-const CACHE='taskflow-v1';
+const CACHE='taskflow-v2';
 const SHELL=['/','/index.html','/style.css','/js/db.js','/js/app.js','/icon-192.svg','/icon-512.svg','/manifest.json'];
 
 self.addEventListener('install',e=>{
