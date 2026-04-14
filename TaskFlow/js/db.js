@@ -15,19 +15,124 @@ function rowToNote(r){return{id:String(r.id),title:r.title||'',content:r.content
 function noteToRow(n){return{title:n.title,content:n.content||'',category:n.cat||'autre'}}
 
 /* ═══ CRUD TASKS ═══ */
-async function loadTasks(){const{data,error}=await sb.from('tasks').select('*').order('id',{ascending:true});if(error){console.error('loadTasks:',error);toast('Erreur chargement tâches');return}tasks=(data||[]).map(rowToTask)}
-async function insertTask(t){const row=taskToRow(t);const{data,error}=await sb.from('tasks').insert(row).select();if(error){console.error('insertTask:',error);toast('Erreur création tâche');return null}if(data&&data[0])t.id=String(data[0].id);return t}
-async function updateTaskDB(t){const{data,error}=await sb.from('tasks').update(taskToRow(t)).eq('id',t.id).select();if(error){console.error('updateTask:',error);toast('Erreur mise à jour tâche');return}if(!data?.length)console.warn('updateTask: 0 lignes mises à jour, id=',t.id)}
-async function deleteTaskDB(id){const{error}=await sb.from('tasks').delete().eq('id',id);if(error){console.error('deleteTask:',error);toast('Erreur suppression tâche')}}
+async function loadTasks(){
+  console.log('[DB] loadTasks →');
+  const{data,error}=await sb.from('tasks').select('*').order('id',{ascending:true});
+  if(error){console.error('[DB] loadTasks ERREUR:',error);toast('Erreur chargement tâches');return}
+  console.log('[DB] loadTasks ← '+( data||[]).length+' tâches');
+  tasks=(data||[]).map(rowToTask)
+}
+async function insertTask(t){
+  const row=taskToRow(t);
+  console.log('[DB] insertTask →',row);
+  const{data,error}=await sb.from('tasks').insert(row).select();
+  if(error){console.error('[DB] insertTask ERREUR:',error);toast('Erreur création tâche — '+error.message);return null}
+  console.log('[DB] insertTask ← OK',data);
+  if(data&&data[0])t.id=String(data[0].id);
+  return t
+}
+async function updateTaskDB(t){
+  const row=taskToRow(t);
+  console.log('[DB] updateTask → id='+t.id,row);
+  const{data,error}=await sb.from('tasks').update(row).eq('id',t.id).select();
+  if(error){console.error('[DB] updateTask ERREUR:',error);toast('Erreur mise à jour tâche — '+error.message);return}
+  if(!data?.length){
+    console.error('[DB] updateTask ÉCHEC : 0 lignes affectées, id='+t.id+' (RLS ou id introuvable)');
+    toast('⚠️ Tâche non sauvegardée (0 lignes — vérifier RLS Supabase)');
+  } else {
+    console.log('[DB] updateTask ← OK',data[0]);
+  }
+}
+async function deleteTaskDB(id){
+  console.log('[DB] deleteTask → id='+id);
+  const{data,error,count}=await sb.from('tasks').delete().eq('id',id).select();
+  if(error){console.error('[DB] deleteTask ERREUR:',error);toast('Erreur suppression tâche — '+error.message);return}
+  if(!data?.length){
+    console.error('[DB] deleteTask ÉCHEC : 0 lignes affectées, id='+id+' (RLS ou id introuvable)');
+    toast('⚠️ Suppression non sauvegardée (RLS Supabase ?)');
+  } else {
+    console.log('[DB] deleteTask ← OK, supprimé id='+id);
+  }
+}
 
 /* ═══ CRUD HABITS ═══ */
-async function loadHabits(){const{data,error}=await sb.from('habits').select('*').order('id',{ascending:true});if(error){console.error('loadHabits:',error);toast('Erreur chargement habitudes');return}habits=(data||[]).map(rowToHabit)}
-async function updateHabit(h){const{data,error}=await sb.from('habits').update(habitToRow(h)).eq('id',h.id).select();if(error){console.error('updateHabit:',error);toast('Erreur mise à jour habitude');return}if(!data?.length)console.warn('updateHabit: 0 lignes mises à jour, id=',h.id)}
-async function insertHabit(h){const{data,error}=await sb.from('habits').insert(habitToRow(h)).select();if(error){console.error('insertHabit:',error);toast('Erreur création habitude');return null}if(data&&data[0])h.id=String(data[0].id);return h}
-async function deleteHabitDB(id){const{error}=await sb.from('habits').delete().eq('id',id);if(error){console.error('deleteHabit:',error);toast('Erreur suppression habitude')}}
+async function loadHabits(){
+  console.log('[DB] loadHabits →');
+  const{data,error}=await sb.from('habits').select('*').order('id',{ascending:true});
+  if(error){console.error('[DB] loadHabits ERREUR:',error);toast('Erreur chargement habitudes');return}
+  console.log('[DB] loadHabits ← '+(data||[]).length+' habitudes');
+  habits=(data||[]).map(rowToHabit)
+}
+async function updateHabit(h){
+  const row=habitToRow(h);
+  console.log('[DB] updateHabit → id='+h.id,row);
+  const{data,error}=await sb.from('habits').update(row).eq('id',h.id).select();
+  if(error){console.error('[DB] updateHabit ERREUR:',error);toast('Erreur mise à jour habitude — '+error.message);return}
+  if(!data?.length){
+    console.error('[DB] updateHabit ÉCHEC : 0 lignes affectées, id='+h.id);
+    toast('⚠️ Habitude non sauvegardée (RLS Supabase ?)');
+  } else {
+    console.log('[DB] updateHabit ← OK');
+  }
+}
+async function insertHabit(h){
+  const row=habitToRow(h);
+  console.log('[DB] insertHabit →',row);
+  const{data,error}=await sb.from('habits').insert(row).select();
+  if(error){console.error('[DB] insertHabit ERREUR:',error);toast('Erreur création habitude — '+error.message);return null}
+  console.log('[DB] insertHabit ← OK',data);
+  if(data&&data[0])h.id=String(data[0].id);
+  return h
+}
+async function deleteHabitDB(id){
+  console.log('[DB] deleteHabit → id='+id);
+  const{data,error}=await sb.from('habits').delete().eq('id',id).select();
+  if(error){console.error('[DB] deleteHabit ERREUR:',error);toast('Erreur suppression habitude — '+error.message);return}
+  if(!data?.length){
+    console.error('[DB] deleteHabit ÉCHEC : 0 lignes affectées, id='+id);
+    toast('⚠️ Suppression habitude non sauvegardée');
+  } else {
+    console.log('[DB] deleteHabit ← OK');
+  }
+}
 
 /* ═══ CRUD NOTES ═══ */
-async function loadNotes(){const{data,error}=await sb.from('notes').select('*').order('updated_at',{ascending:false});if(error){console.error('loadNotes:',error);toast('Erreur chargement notes');return}notes=(data||[]).map(rowToNote)}
-async function insertNote(n){const{data,error}=await sb.from('notes').insert(noteToRow(n)).select();if(error){console.error('insertNote:',error);toast('Erreur création note');return null}if(data&&data[0]){n.id=String(data[0].id);n.createdAt=data[0].created_at;n.updatedAt=data[0].updated_at}return n}
-async function updateNoteDB(n){const{data,error}=await sb.from('notes').update(noteToRow(n)).eq('id',n.id).select();if(error){console.error('updateNote:',error);toast('Erreur mise à jour note');return}if(!data?.length)console.warn('updateNoteDB: 0 lignes mises à jour, id=',n.id)}
-async function deleteNoteDB(id){const{error}=await sb.from('notes').delete().eq('id',id);if(error){console.error('deleteNote:',error);toast('Erreur suppression note')}}
+async function loadNotes(){
+  console.log('[DB] loadNotes →');
+  const{data,error}=await sb.from('notes').select('*').order('updated_at',{ascending:false});
+  if(error){console.error('[DB] loadNotes ERREUR:',error);toast('Erreur chargement notes');return}
+  console.log('[DB] loadNotes ← '+(data||[]).length+' notes');
+  notes=(data||[]).map(rowToNote)
+}
+async function insertNote(n){
+  const row=noteToRow(n);
+  console.log('[DB] insertNote →',row);
+  const{data,error}=await sb.from('notes').insert(row).select();
+  if(error){console.error('[DB] insertNote ERREUR:',error);toast('Erreur création note — '+error.message);return null}
+  console.log('[DB] insertNote ← OK',data);
+  if(data&&data[0]){n.id=String(data[0].id);n.createdAt=data[0].created_at;n.updatedAt=data[0].updated_at}
+  return n
+}
+async function updateNoteDB(n){
+  const row=noteToRow(n);
+  console.log('[DB] updateNote → id='+n.id,row);
+  const{data,error}=await sb.from('notes').update(row).eq('id',n.id).select();
+  if(error){console.error('[DB] updateNote ERREUR:',error);toast('Erreur mise à jour note — '+error.message);return}
+  if(!data?.length){
+    console.error('[DB] updateNote ÉCHEC : 0 lignes affectées, id='+n.id);
+    toast('⚠️ Note non sauvegardée (RLS Supabase ?)');
+  } else {
+    console.log('[DB] updateNote ← OK');
+  }
+}
+async function deleteNoteDB(id){
+  console.log('[DB] deleteNote → id='+id);
+  const{data,error}=await sb.from('notes').delete().eq('id',id).select();
+  if(error){console.error('[DB] deleteNote ERREUR:',error);toast('Erreur suppression note — '+error.message);return}
+  if(!data?.length){
+    console.error('[DB] deleteNote ÉCHEC : 0 lignes affectées, id='+id);
+    toast('⚠️ Suppression note non sauvegardée');
+  } else {
+    console.log('[DB] deleteNote ← OK');
+  }
+}
