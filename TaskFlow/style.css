@@ -323,7 +323,7 @@ button,input,textarea,select{font-family:inherit}
 
 /* ══ CALENDAR MONTH ══ */
 .cal-month-hdr{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--brd);flex-shrink:0}
-.cal-month-hdr-cell{padding:8px 4px;text-align:center;font-size:.72rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.cal-month-hdr-day{padding:8px 4px;text-align:center;font-size:.72rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
 .cal-month-grid-body{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;overflow:hidden}
 .cal-month-cell{border-right:1px solid var(--brd);border-bottom:1px solid var(--brd);padding:6px 8px;cursor:pointer;transition:.12s;min-height:80px;display:flex;flex-direction:column;gap:3px;overflow:hidden}
 .cal-month-cell:nth-child(7n){border-right:none}

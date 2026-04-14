@@ -15,7 +15,7 @@ const MOIS=['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','o
 const MOIS_FULL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS_FULL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const CAT_COLORS={travail:'amber',personnel:'blue',sante:'green',urgent:'red',apprentissage:'or3'};
-function dateKey(d){return d.toISOString().slice(0,10)}
+function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function filt(){return tasks.filter(t=>(filterCategory==='all'||t.cat===filterCategory)&&(filterPriority==='all'||t.prio===filterPriority))}
 
 /* ═══ CONFIRM ═══ */
@@ -68,7 +68,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))docum
 function fabAction(){
   if(activeView==='habits')openHabitModal();
   else if(activeView==='notes')createNote();
-  else if(activeView==='calendar'){openModal();setTimeout(()=>{const dates=calView==='day'?dayDate(calOff):weekDates(calOff);document.getElementById('f-due').value=dateKey(dates[0])},50)}
+  else if(activeView==='calendar'){openModal();setTimeout(()=>{let d;if(calView==='day')d=dayDate(calOff)[0];else if(calView==='week')d=weekDates(calOff)[0];else{d=new Date();d=new Date(d.getFullYear(),d.getMonth()+calOff,1)}document.getElementById('f-due').value=dateKey(d)},50)}
   else openModal();
 }
 
@@ -143,7 +143,7 @@ async function saveNewHabit(){const name=document.getElementById('fh-name').valu
 async function saveTask(){
   const title=document.getElementById('f-title').value.trim();if(!title){toast('Titre requis !');return}
   const fields={title,desc:document.getElementById('f-desc').value.trim(),cat:document.getElementById('f-cat').value,prio:document.getElementById('f-prio').value,dur:document.getElementById('f-dur').value.trim(),due:document.getElementById('f-due').value,status:document.getElementById('f-status').value,eq:document.getElementById('f-eq').value,recurrence:document.getElementById('f-recur').value,recurDay:document.getElementById('f-recur').value!=='never'&&document.getElementById('f-recur').value!=='daily'?Number(document.getElementById('f-recur-day').value):null};
-  if(editingId){const t=tasks.find(x=>x.id===editingId);if(t){Object.assign(t,fields);renderAll();await updateTaskDB(t);toast('Tâche modifiée ✓')}}
+  if(editingId){const t=tasks.find(x=>x.id===editingId);if(t){if(fields.status==='done'&&t.status!=='done')fields.completedAt=dateKey(new Date());else if(fields.status!=='done')fields.completedAt=null;Object.assign(t,fields);renderAll();await updateTaskDB(t);toast('Tâche modifiée ✓')}}
   else{const t={id:null,...fields,calDay:null,calHour:null,completedAt:null};const r=await insertTask(t);if(r){tasks.push(r);renderAll();toast('Tâche créée ✓')}}
   closeModal();
 }
@@ -222,14 +222,14 @@ function renderFocus(){
   <div class="focus-section"><div class="focus-section-title"><span>&#9989;</span> Habitudes du jour</div><div class="focus-habits-count">${habitsToday}/${habits.length} (${habitPct}%)</div><div class="focus-habits-bar"><div class="focus-habits-fill" style="width:${habitPct}%"></div></div>${habitsHTML}</div>
   <div class="focus-section"><div class="focus-section-title"><span>&#9200;</span> Échéances proches</div>${deadlines}</div>`;
 }
-async function toggleFocusHabit(id){const hb=habits.find(x=>x.id===id);if(!hb)return;const today=dateKey(new Date());if(!hb.checks)hb.checks={};hb.checks[today]=!hb.checks[today];if(!hb.checks[today])delete hb.checks[today];renderAll();await updateHabit(hb)}
+async function toggleFocusHabit(id){await toggleHabitDay(id,dateKey(new Date()))}
 
 /* ═══ CALENDAR ═══ */
 function weekDates(off){const n=new Date(),d=n.getDay(),m=new Date(n);m.setDate(n.getDate()-(d===0?6:d-1)+off*7);return Array.from({length:7},(_,i)=>{const x=new Date(m);x.setDate(m.getDate()+i);return x})}
 function dayDate(off){const d=new Date();d.setDate(d.getDate()+off);return[d]}
 function monthDates(off){const n=new Date(),y=n.getFullYear(),m=n.getMonth()+off;const first=new Date(y,m,1);const sdow=(first.getDay()+6)%7;const start=new Date(first);start.setDate(start.getDate()-sdow);const days=[];const d=new Date(start);for(let i=0;i<42;i++){days.push(new Date(d));d.setDate(d.getDate()+1)}return{days,month:first.getMonth(),year:first.getFullYear()}}
 function dayOff(d){const now=new Date();now.setHours(0,0,0,0);const t=new Date(d);t.setHours(0,0,0,0);return Math.round((t-now)/864e5)}
-function calClickDay(off){calOff=off;calMode('day')}
+function calClickDay(off){calView='day';calOff=off;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));document.getElementById('cal-btn-day')?.classList.add('act');renderCalendar()}
 const HOURS=Array.from({length:14},(_,i)=>i+7);
 function renderCalendar(){
   const isMonth=calView==='month';
@@ -281,16 +281,16 @@ function renderNotes(){
   const filtered=notesCatFilter==='all'?notes:notes.filter(n=>n.cat===notesCatFilter);
   document.getElementById('notes-list').innerHTML=filtered.map(n=>{const dateStr=n.updatedAt?new Date(n.updatedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';return`<div class="note-item${selectedNoteId===n.id?' active':''}" onclick="selectNote('${n.id}')"><div class="note-item-title">${escapeHtml(n.title||'Sans titre')}</div><div class="note-item-preview">${escapeHtml((n.content||'').slice(0,80))}</div><div class="note-item-meta"><span class="badge b-${n.cat}" style="font-size:.55rem">${NOTE_CATEGORY_LABELS[n.cat]||n.cat}</span>${dateStr?`<span style="margin-left:auto;font-size:.65rem;color:var(--tx3)">${dateStr}</span>`:''}</div></div>`}).join('')||'<div style="color:var(--tx3);padding:20px;text-align:center;font-size:.84rem">Aucune note</div>';
 }
-function selectNote(id){
+async function selectNote(id){
   if(selectedNoteId&&selectedNoteId!==id){
     if(selectedNoteId==='draft'){
       const t=document.getElementById('n-title').value.trim(),c=document.getElementById('n-content').value;
-      if((t||c)&&!confirm('Note en cours non sauvegardée. Abandonner ?')){return}
+      if(t||c){const ok=await showConfirm('Note en cours non sauvegardée. Abandonner ?');if(!ok)return}
       notesDraft=null;
     } else {
       const cur=notes.find(x=>x.id===selectedNoteId);
       if(cur&&(document.getElementById('n-title').value.trim()!==cur.title||document.getElementById('n-content').value!==cur.content)){
-        if(!confirm('Modifications non sauvegardées. Continuer quand même ?')){return}
+        const ok=await showConfirm('Modifications non sauvegardées. Continuer quand même ?');if(!ok)return
       }
     }
   }
