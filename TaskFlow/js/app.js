@@ -1,4 +1,4 @@
-let filterCategory='all',filterPriority='all',calOff=0,calView='week',dragId=null,editingId=null;
+let filterCategory='all',filterPriority='all',calOff=0,calView='week',editingId=null;
 let activeView='focus',selectedNoteId=null,notesCatFilter='all',notesDraft=null,searchQuery='';
 let completionChart=null,streaksCache={};
 
@@ -165,11 +165,53 @@ async function toggleDone(id){
   } else {t.status='todo';t.completedAt=null;renderAll();await updateTaskDB(t)}
 }
 
-/* ═══ DRAG ═══ */
-function dStart(e){dragId=e.target.closest('[data-id]').dataset.id;e.dataTransfer.effectAllowed='move';e.target.closest('[data-id]').style.opacity='.5'}
-function dEnd(e){const el=e.target.closest('[data-id]');if(el)el.style.opacity='1';dragId=null}
-function dragOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
-function dragLeave(e){e.currentTarget.classList.remove('dragover')}
+/* ═══ DRAG & DROP UNIFIÉ ═══ */
+let dragId=null,dragOverEl=null,dragOverBefore=false;
+
+/* Tri par position (null = fin) */
+const byPos=(a,b)=>{const ap=a.position??Infinity,bp=b.position??Infinity;return ap-bp};
+const byPosPrio=(a,b)=>{
+  const ap=a.position??Infinity,bp=b.position??Infinity;
+  if(ap!==Infinity||bp!==Infinity)return ap-bp;
+  return PRIORITY_ORDER[a.prio]-PRIORITY_ORDER[b.prio];
+};
+
+function clearDragUI(){
+  document.querySelectorAll('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));
+}
+function dStart(e){
+  const el=e.target.closest('[data-id]');if(!el)return;
+  dragId=el.dataset.id;e.dataTransfer.effectAllowed='move';el.classList.add('drag-ghost');
+}
+function dEnd(e){
+  document.querySelectorAll('.drag-ghost').forEach(el=>el.classList.remove('drag-ghost'));
+  clearDragUI();document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));
+  dragId=null;dragOverEl=null;
+}
+function dragOver(e){
+  e.preventDefault();clearDragUI();e.currentTarget.classList.add('dragover');
+  const item=e.target.closest('[data-id]');
+  if(item&&item.dataset.id!==dragId){
+    const r=item.getBoundingClientRect();
+    dragOverBefore=e.clientY<r.top+r.height/2;
+    item.classList.add(dragOverBefore?'drop-before':'drop-after');
+    dragOverEl=item;
+  } else dragOverEl=null;
+}
+function dragLeave(e){
+  if(!e.currentTarget.contains(e.relatedTarget)){
+    e.currentTarget.classList.remove('dragover');clearDragUI();dragOverEl=null;
+  }
+}
+/* Réordonner un tableau et assigner les positions */
+function reorder(arr,moved,oe,ob){
+  const list=arr.filter(x=>x.id!==moved.id);
+  if(oe){const idx=list.findIndex(x=>x.id===oe.dataset.id);
+    if(idx!==-1)list.splice(ob?idx:idx+1,0,moved);else list.push(moved);
+  } else list.push(moved);
+  list.forEach((x,i)=>x.position=i*1000);
+  return list;
+}
 
 /* ═══ SIDEBAR ═══ */
 function renderSidebar(){
@@ -194,11 +236,21 @@ function cardHTML(t){
     <div class="card-foot">${t.dur?'<span>&#128339; '+escapeHtml(t.dur)+'</span>':''}${t.due?'<span>&#128197; '+t.due+'</span>':''}</div></div>`}
 function renderKanban(){
   const f=filt();['todo','doing','done'].forEach(s=>{
-    const items=f.filter(t=>t.status===s).sort((a,b)=>PRIORITY_ORDER[a.prio]-PRIORITY_ORDER[b.prio]);
+    const items=f.filter(t=>t.status===s).sort(byPosPrio);
     document.getElementById('k-'+s).innerHTML=items.map(cardHTML).join('')||'<div style="color:var(--tx3);text-align:center;padding:20px;font-size:.8rem">Glissez des tâches ici</div>';
     document.getElementById('kc-'+s).textContent=items.length})}
-/* kOver/kLeave remplaces par dragOver/dragLeave */
-async function kDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.status=e.currentTarget.dataset.st;renderAll();await updateTaskDB(t)}dragId=null}
+/* ═══ KANBAN DROP ═══ */
+async function kDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;
+  const t=tasks.find(x=>x.id===dragId);const oe=dragOverEl,ob=dragOverBefore;
+  dragId=null;dragOverEl=null;if(!t)return;
+  const newSt=e.currentTarget.dataset.st;
+  if(newSt!==t.status){t.status=newSt;if(newSt==='done')t.completedAt=dateKey(new Date());else t.completedAt=null;}
+  const colItems=tasks.filter(x=>x.status===newSt).sort(byPosPrio);
+  const updated=reorder(colItems,t,oe,ob);
+  renderAll();await updateTaskPositions(updated);
+}
 
 /* ═══ FOCUS ═══ */
 function renderFocus(){
@@ -209,17 +261,22 @@ function renderFocus(){
   const habitsToday=habits.filter(hb=>hb.checks&&hb.checks[today]).length;
   const pending=tasks.filter(t=>t.status!=='done');
   const scored=pending.map(t=>{let s=(5-(PRIORITY_ORDER[t.prio]||2))*10;if(t.due){const d=daysUntil(t.due);if(d<=0)s+=100;else if(d<=1)s+=80;else if(d<=3)s+=50;else if(d<=7)s+=20}if(t.eq==='do')s+=30;return{...t,_s:s}}).sort((a,b)=>b._s-a._s).slice(0,3);
-  const top3=scored.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=daysUntil(t.due);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
-    return `<div class="focus-task${d?' done':''}"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div><button class="card-act-btn" onclick="openModal('${t.id}')" style="flex-shrink:0;opacity:.6" title="Modifier">&#9998;</button></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
+  /* Respecter l'ordre manuel si positions définies */
+  const top3Sorted=scored.some(x=>tasks.find(t=>t.id===x.id)?.position!=null)
+    ?scored.map(x=>tasks.find(t=>t.id===x.id)).filter(Boolean).sort(byPos)
+    :scored.map(x=>tasks.find(t=>t.id===x.id)).filter(Boolean);
+  const top3=top3Sorted.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=daysUntil(t.due);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
+    return `<div class="focus-task${d?' done':''}" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div><button class="card-act-btn" onclick="openModal('${t.id}')" style="flex-shrink:0;opacity:.6" title="Modifier">&#9998;</button></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
   const habitPct=habits.length?Math.round(habitsToday/habits.length*100):0;
-  const habitsHTML=habits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=streaksCache[hb.id]||{cur:0,best:0};
-    return `<div class="focus-habit${checked?' checked':''}" onclick="toggleFocusHabit('${hb.id}')"><div class="focus-chk${checked?' on':''}"></div><span class="focus-habit-name">${escapeHtml(hb.name)}</span>${streak>0?'<span class="focus-habit-streak">&#128293; '+streak+'j</span>':''}</div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
+  const sortedHabits=habits.slice().sort(byPos);
+  const habitsHTML=sortedHabits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=streaksCache[hb.id]||{cur:0,best:0};
+    return `<div class="focus-habit${checked?' checked':''}" draggable="true" data-id="${hb.id}" ondragstart="dStart(event)" ondragend="dEnd(event)" onclick="toggleFocusHabit('${hb.id}')"><div class="focus-chk${checked?' on':''}"></div><span class="focus-habit-name">${escapeHtml(hb.name)}</span>${streak>0?'<span class="focus-habit-streak">&#128293; '+streak+'j</span>':''}</div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
   const upcoming=tasks.filter(t=>t.due&&t.status!=='done'&&daysUntil(t.due)<=3).sort((a,b)=>a.due.localeCompare(b.due));
   const deadlines=upcoming.map(t=>{const dd=daysUntil(t.due);const u=dd<=1;const w=dd<=2&&!u;const cls=u?'urgent':w?'warning':'';const dc=u?'red':w?'orange':'normal';const dl=dd<0?'En retard':dd===0?"Aujourd'hui":dd===1?'Demain':dd+'j';
     return `<div class="focus-deadline ${cls}"><div class="focus-deadline-info"><div class="focus-deadline-title">${escapeHtml(t.title)}</div><div class="focus-deadline-cat"><span class="badge b-${t.cat}" style="font-size:.58rem">${CATEGORY_LABELS[t.cat]}</span></div></div><span class="focus-deadline-days ${dc}">${dl}</span></div>`}).join('')||'<div class="focus-empty">Aucune échéance dans les 3 prochains jours</div>';
   document.getElementById('focus-content').innerHTML=`<div class="focus-header"><div class="focus-greeting">${greeting}</div><div class="focus-date">${dateStr}</div><div class="focus-scores"><div class="focus-score-item"><div class="focus-score-num">${tasksDoneToday}</div><div class="focus-score-label">Tâches terminées</div></div><div class="focus-score-item"><div class="focus-score-num">${habitsToday}/${habits.length}</div><div class="focus-score-label">Habitudes du jour</div></div><div class="focus-score-item"><div class="focus-score-num">${pending.length}</div><div class="focus-score-label">Restantes</div></div></div></div>
-  <div class="focus-section"><div class="focus-section-title"><span>&#127919;</span> Mes 3 priorités du jour</div>${top3}</div>
-  <div class="focus-section"><div class="focus-section-title"><span>&#9989;</span> Habitudes du jour</div><div class="focus-habits-count">${habitsToday}/${habits.length} (${habitPct}%)</div><div class="focus-habits-bar"><div class="focus-habits-fill" style="width:${habitPct}%"></div></div>${habitsHTML}</div>
+  <div class="focus-section" id="focus-top3-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusTasksDrop(event)"><div class="focus-section-title"><span>&#127919;</span> Mes 3 priorités du jour</div>${top3}</div>
+  <div class="focus-section" id="focus-habits-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusHabitsDrop(event)"><div class="focus-section-title"><span>&#9989;</span> Habitudes du jour</div><div class="focus-habits-count">${habitsToday}/${habits.length} (${habitPct}%)</div><div class="focus-habits-bar"><div class="focus-habits-fill" style="width:${habitPct}%"></div></div>${habitsHTML}</div>
   <div class="focus-section"><div class="focus-section-title"><span>&#9200;</span> Échéances proches</div>${deadlines}</div>`;
 }
 async function toggleFocusHabit(id){await toggleHabitDay(id,dateKey(new Date()))}
@@ -261,25 +318,89 @@ function renderCalendar(){
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
 function calMode(m){calView=m;calOff=0;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day',month:'cal-btn-month'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
-/* cdOver/cdLeave remplaces par dragOver/dragLeave */
-async function cdDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){const col=e.currentTarget.closest('.cal-day-col');if(col){t.calDay=col.dataset.day;const rect=col.getBoundingClientRect();t.calHour=Math.min(20,Math.max(7,Math.floor((e.clientY-rect.top)/48)+7))}renderAll();await updateTaskDB(t)}dragId=null}
-/* cuOver/cuLeave remplaces par dragOver/dragLeave */
-async function cuDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.calDay=null;t.calHour=null;renderAll();await updateTaskDB(t)}dragId=null}
+/* ═══ CALENDAR DROPS ═══ */
+async function cdDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;const t=tasks.find(x=>x.id===dragId);dragId=null;dragOverEl=null;
+  if(!t)return;
+  const col=e.currentTarget.closest('.cal-day-col');
+  if(col){t.calDay=col.dataset.day;const rect=col.getBoundingClientRect();t.calHour=Math.min(20,Math.max(7,Math.floor((e.clientY-rect.top)/48)+7))}
+  renderAll();await updateTaskDB(t);
+}
+async function cuDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;const t=tasks.find(x=>x.id===dragId);dragId=null;dragOverEl=null;
+  if(!t)return;
+  t.calDay=null;t.calHour=null;renderAll();await updateTaskDB(t);
+}
 
 /* ═══ EISENHOWER ═══ */
 function renderEisenhower(){
   ['do','plan','delegate','eliminate'].forEach(q=>{
-    const items=filt().filter(t=>t.eq===q).sort((a,b)=>PRIORITY_ORDER[a.prio]-PRIORITY_ORDER[b.prio]);
+    const items=filt().filter(t=>t.eq===q).sort(byPosPrio);
     document.getElementById('eq-'+q).innerHTML=items.map(t=>{const ri=t.recurrence&&t.recurrence!=='never'?' \uD83D\uDD04':'';const done=t.status==='done';return`<div class="eq-card${done?' eq-card-done':''}" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><button class="eq-card-x" onclick="toggleDone('${t.id}')" title="${done?'Marquer à faire':'Marquer terminé'}" style="color:${done?'var(--green)':'var(--tx3)'};font-size:1rem">${done?'&#9989;':'&#9711;'}</button><span class="badge b-${t.cat}" style="font-size:.6rem">${CATEGORY_LABELS[t.cat]||t.cat}</span><span class="eq-card-t${done?' eq-card-t-done':''}">${escapeHtml(t.title)}${ri}</span><button class="eq-card-x" onclick="openModal('${t.id}')">&#9998;</button><button class="eq-card-x" onclick="delTask('${t.id}')">&#10005;</button></div>`}).join('')||'<div style="color:var(--tx3);font-size:.78rem;padding:16px;text-align:center">Glissez des tâches ici</div>';
     document.getElementById('ec-'+q).textContent=items.length})}
-/* eOver/eLeave remplaces par dragOver/dragLeave */
-async function eDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(!dragId)return;const t=tasks.find(x=>x.id===dragId);if(t){t.eq=e.currentTarget.dataset.eq;renderAll();await updateTaskDB(t)}dragId=null}
+/* ═══ EISENHOWER DROP ═══ */
+async function eDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;
+  const t=tasks.find(x=>x.id===dragId);const oe=dragOverEl,ob=dragOverBefore;
+  dragId=null;dragOverEl=null;if(!t)return;
+  t.eq=e.currentTarget.dataset.eq;
+  const qItems=tasks.filter(x=>x.eq===t.eq).sort(byPosPrio);
+  const updated=reorder(qItems,t,oe,ob);
+  renderAll();await updateTaskPositions(updated);
+}
+
+/* ═══ NOTES DROP ═══ */
+async function notesDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;
+  const n=notes.find(x=>x.id===dragId);const oe=dragOverEl,ob=dragOverBefore;
+  dragId=null;dragOverEl=null;if(!n)return;
+  const vis=(notesCatFilter==='all'?notes:notes.filter(x=>x.cat===notesCatFilter)).sort(byPos);
+  const updated=reorder(vis,n,oe,ob);
+  renderAll();await updateNotePositions(updated);
+}
+
+/* ═══ HABITS DROP ═══ */
+async function habitsDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;
+  const h=habits.find(x=>x.id===dragId);const oe=dragOverEl,ob=dragOverBefore;
+  dragId=null;dragOverEl=null;if(!h)return;
+  const sorted=habits.slice().sort(byPos);
+  const updated=reorder(sorted,h,oe,ob);
+  renderAll();await updateHabitPositions(updated);
+}
+
+/* ═══ FOCUS DROPS ═══ */
+async function focusTasksDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;
+  const t=tasks.find(x=>x.id===dragId);const oe=dragOverEl,ob=dragOverBefore;
+  dragId=null;dragOverEl=null;if(!t)return;
+  const els=[...e.currentTarget.querySelectorAll('[data-id]')];
+  const items=els.map(el=>tasks.find(x=>x.id===el.dataset.id)).filter(Boolean);
+  const updated=reorder(items,t,oe,ob);
+  renderAll();await updateTaskPositions(updated);
+}
+async function focusHabitsDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;
+  const h=habits.find(x=>x.id===dragId);const oe=dragOverEl,ob=dragOverBefore;
+  dragId=null;dragOverEl=null;if(!h)return;
+  const els=[...e.currentTarget.querySelectorAll('[data-id]')];
+  const items=els.map(el=>habits.find(x=>x.id===el.dataset.id)).filter(Boolean);
+  const updated=reorder(items,h,oe,ob);
+  renderAll();await updateHabitPositions(updated);
+}
 
 /* ═══ NOTES ═══ */
 document.getElementById('notes-cats').addEventListener('click',e=>{const b=e.target.closest('.notes-cat-btn');if(!b)return;notesCatFilter=b.dataset.nc;document.querySelectorAll('.notes-cat-btn').forEach(x=>x.classList.remove('act'));b.classList.add('act');renderNotes()});
 function renderNotes(){
-  const filtered=notesCatFilter==='all'?notes:notes.filter(n=>n.cat===notesCatFilter);
-  document.getElementById('notes-list').innerHTML=filtered.map(n=>{const dateStr=n.updatedAt?new Date(n.updatedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';return`<div class="note-item${selectedNoteId===n.id?' active':''}" onclick="selectNote('${n.id}')"><div class="note-item-title">${escapeHtml(n.title||'Sans titre')}</div><div class="note-item-preview">${escapeHtml((n.content||'').slice(0,80))}</div><div class="note-item-meta"><span class="badge b-${n.cat}" style="font-size:.55rem">${NOTE_CATEGORY_LABELS[n.cat]||n.cat}</span>${dateStr?`<span style="margin-left:auto;font-size:.65rem;color:var(--tx3)">${dateStr}</span>`:''}</div></div>`}).join('')||'<div style="color:var(--tx3);padding:20px;text-align:center;font-size:.84rem">Aucune note</div>';
+  const filtered=(notesCatFilter==='all'?notes:notes.filter(n=>n.cat===notesCatFilter)).slice().sort(byPos);
+  document.getElementById('notes-list').innerHTML=filtered.map(n=>{const dateStr=n.updatedAt?new Date(n.updatedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';return`<div class="note-item${selectedNoteId===n.id?' active':''}" draggable="true" data-id="${n.id}" ondragstart="dStart(event)" ondragend="dEnd(event)" onclick="selectNote('${n.id}')"><div class="note-item-title">${escapeHtml(n.title||'Sans titre')}</div><div class="note-item-preview">${escapeHtml((n.content||'').slice(0,80))}</div><div class="note-item-meta"><span class="badge b-${n.cat}" style="font-size:.55rem">${NOTE_CATEGORY_LABELS[n.cat]||n.cat}</span>${dateStr?`<span style="margin-left:auto;font-size:.65rem;color:var(--tx3)">${dateStr}</span>`:''}</div></div>`}).join('')||'<div style="color:var(--tx3);padding:20px;text-align:center;font-size:.84rem">Aucune note</div>';
 }
 async function selectNote(id){
   if(selectedNoteId&&selectedNoteId!==id){
@@ -346,11 +467,12 @@ function calcStreaks(h){
 }
 function renderHabits(){
   const today=new Date();
-  const html=habits.map(hb=>{
+  const sorted=habits.slice().sort(byPos);
+  const html=sorted.map(hb=>{
     const{cur,best}=streaksCache[hb.id]||{cur:0,best:0};
     const dots=Array.from({length:14},(_,i)=>{const dd=new Date(today);dd.setDate(today.getDate()-13+i);const k=dateKey(dd);const on=hb.checks&&hb.checks[k]?'on':'';const label=dd.getDate()+'/'+String(dd.getMonth()+1).padStart(2,'0');return`<div class="habit-card-dot ${on}" onclick="toggleHabitDay('${hb.id}','${k}')" title="${label}">${dd.getDate()}</div>`}).join('');
-    return `<div class="habit-card"><div class="habit-card-header"><span class="habit-card-name">${escapeHtml(hb.name)}</span><button class="habit-card-del" onclick="delHabit('${hb.id}')">&#10005;</button></div><div class="habit-card-dots">${dots}</div><div class="habit-card-streak"><span>&#128293; Série actuelle : <strong>${cur}j</strong></span><span>&#127942; Record : <strong>${best}j</strong></span></div></div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
-  document.getElementById('habits-content').innerHTML=`<div class="habits-grid">${html}</div><button onclick="openHabitModal()" style="margin-top:16px;padding:10px 20px;border:none;border-radius:8px;background:var(--or);color:#fff;font-weight:600;cursor:pointer;font-size:.86rem">+ Nouvelle habitude</button>`;
+    return `<div class="habit-card" draggable="true" data-id="${hb.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="habit-card-header"><span class="habit-card-name">${escapeHtml(hb.name)}</span><button class="habit-card-del" onclick="delHabit('${hb.id}')">&#10005;</button></div><div class="habit-card-dots">${dots}</div><div class="habit-card-streak"><span>&#128293; Série actuelle : <strong>${cur}j</strong></span><span>&#127942; Record : <strong>${best}j</strong></span></div></div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
+  document.getElementById('habits-content').innerHTML=`<div class="habits-grid" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="habitsDrop(event)">${html}</div><button onclick="openHabitModal()" style="margin-top:16px;padding:10px 20px;border:none;border-radius:8px;background:var(--or);color:#fff;font-weight:600;cursor:pointer;font-size:.86rem">+ Nouvelle habitude</button>`;
 }
 async function toggleHabitDay(id,key){const hb=habits.find(x=>x.id===id);if(!hb)return;if(!hb.checks)hb.checks={};hb.checks[key]=!hb.checks[key];if(!hb.checks[key])delete hb.checks[key];renderAll();await updateHabit(hb)}
 
@@ -437,21 +559,90 @@ function checkDeadlines(){
 }
 
 /* ═══ TOUCH DRAG ═══ */
-let touchDragId=null,touchGhost=null,touchStartX=0,touchStartY=0,touchMoved=false;
-function initTouchDrag(){document.addEventListener('touchstart',onTS,{passive:false});document.addEventListener('touchmove',onTM,{passive:false});document.addEventListener('touchend',onTE,{passive:false})}
-function onTS(e){const c=e.target.closest('[data-id][draggable]');if(!c||e.target.closest('button'))return;const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;touchMoved=false;touchDragId=c.dataset.id}
-function onTM(e){if(!touchDragId)return;const t=e.touches[0];if(!touchMoved&&Math.abs(t.clientX-touchStartX)<8&&Math.abs(t.clientY-touchStartY)<8)return;touchMoved=true;e.preventDefault();
-  if(!touchGhost){const c=document.querySelector(`[data-id="${touchDragId}"][draggable]`);if(!c)return;touchGhost=c.cloneNode(true);touchGhost.className='touch-ghost';touchGhost.style.width=c.offsetWidth+'px';document.body.appendChild(touchGhost);c.style.opacity='.3'}
-  touchGhost.style.left=(t.clientX-60)+'px';touchGhost.style.top=(t.clientY-30)+'px';
-  document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));
-  const u=document.elementFromPoint(t.clientX,t.clientY);if(u){const col=u.closest('[data-st]')||u.closest('[data-eq]')||u.closest('[data-day]');if(col)col.classList.add('dragover');const up=u.closest('.cal-side');if(up)up.classList.add('dragover')}}
-async function onTE(e){if(!touchDragId)return;document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));
-  if(touchGhost){touchGhost.remove();touchGhost=null}const oc=document.querySelector(`[data-id="${touchDragId}"][draggable]`);if(oc)oc.style.opacity='1';
-  if(!touchMoved){touchDragId=null;return}const tc=e.changedTouches[0],u=document.elementFromPoint(tc.clientX,tc.clientY),t=tasks.find(x=>x.id===touchDragId);touchDragId=null;if(!t||!u)return;
-  const kC=u.closest('[data-st]');if(kC){t.status=kC.dataset.st;renderAll();await updateTaskDB(t);return}
-  const eC=u.closest('[data-eq]');if(eC){t.eq=eC.dataset.eq;renderAll();await updateTaskDB(t);return}
-  const dC=u.closest('[data-day]');if(dC){t.calDay=dC.dataset.day;const r=dC.getBoundingClientRect();t.calHour=Math.min(20,Math.max(7,Math.floor((tc.clientY-r.top)/48)+7));renderAll();await updateTaskDB(t);return}
-  const uC=u.closest('.cal-side');if(uC){t.calDay=null;t.calHour=null;renderAll();await updateTaskDB(t)}}
+/* ═══ TOUCH DRAG ═══ */
+let touchDragId=null,touchGhost=null,touchStartX=0,touchStartY=0,touchMoved=false,touchTimer=null,touchPendingId=null;
+function initTouchDrag(){
+  document.addEventListener('touchstart',onTS,{passive:false});
+  document.addEventListener('touchmove',onTM,{passive:false});
+  document.addEventListener('touchend',onTE,{passive:false});
+}
+function onTS(e){
+  const c=e.target.closest('[data-id][draggable]');if(!c||e.target.closest('button'))return;
+  const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;touchMoved=false;touchPendingId=c.dataset.id;
+  touchTimer=setTimeout(()=>{
+    touchDragId=touchPendingId;
+    if(navigator.vibrate)navigator.vibrate(50);
+    const el=document.querySelector(`[data-id="${touchDragId}"][draggable]`);if(!el)return;
+    touchGhost=el.cloneNode(true);touchGhost.className='touch-ghost';touchGhost.style.width=el.offsetWidth+'px';
+    document.body.appendChild(touchGhost);el.style.opacity='.3';
+    touchGhost.style.left=(touchStartX-60)+'px';touchGhost.style.top=(touchStartY-30)+'px';
+    touchMoved=true;
+  },400);
+}
+function onTM(e){
+  if(!touchDragId&&touchPendingId){
+    const t=e.touches[0];
+    if(Math.abs(t.clientX-touchStartX)>12||Math.abs(t.clientY-touchStartY)>12){clearTimeout(touchTimer);touchTimer=null;touchPendingId=null}
+    return;
+  }
+  if(!touchDragId)return;
+  touchMoved=true;e.preventDefault();
+  const t=e.touches[0];
+  if(touchGhost){touchGhost.style.left=(t.clientX-60)+'px';touchGhost.style.top=(t.clientY-30)+'px';}
+  clearDragUI();document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));
+  const u=document.elementFromPoint(t.clientX,t.clientY);if(!u)return;
+  const zone=u.closest('[data-st]')||u.closest('[data-eq]')||u.closest('[data-day]')||u.closest('.cal-side')||u.closest('.notes-list')||u.closest('.habits-grid')||u.closest('#focus-top3-section')||u.closest('#focus-habits-section');
+  if(zone)zone.classList.add('dragover');
+  const item=u.closest('[data-id]');
+  if(item&&item.dataset.id!==touchDragId){
+    const rect=item.getBoundingClientRect();
+    dragOverBefore=t.clientY<rect.top+rect.height/2;
+    item.classList.add(dragOverBefore?'drop-before':'drop-after');
+    dragOverEl=item;
+  } else dragOverEl=null;
+}
+async function onTE(e){
+  clearTimeout(touchTimer);touchTimer=null;touchPendingId=null;
+  if(!touchDragId)return;
+  const oe=dragOverEl,ob=dragOverBefore;
+  document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));clearDragUI();
+  if(touchGhost){touchGhost.remove();touchGhost=null}
+  const oc=document.querySelector(`[data-id="${touchDragId}"][draggable]`);if(oc)oc.style.opacity='1';
+  if(!touchMoved){touchDragId=null;dragOverEl=null;return}
+  const tc=e.changedTouches[0],u=document.elementFromPoint(tc.clientX,tc.clientY);
+  const id=touchDragId;touchDragId=null;dragOverEl=null;
+  if(!u)return;
+  /* Kanban */
+  const kC=u.closest('[data-st]');if(kC){const t=tasks.find(x=>x.id===id);if(!t)return;
+    const newSt=kC.dataset.st;if(newSt!==t.status){t.status=newSt;if(newSt==='done')t.completedAt=dateKey(new Date());else t.completedAt=null;}
+    const colItems=tasks.filter(x=>x.status===newSt).sort(byPosPrio);
+    renderAll();await updateTaskPositions(reorder(colItems,t,oe,ob));return;}
+  /* Eisenhower */
+  const eC=u.closest('[data-eq]');if(eC){const t=tasks.find(x=>x.id===id);if(!t)return;
+    t.eq=eC.dataset.eq;const qItems=tasks.filter(x=>x.eq===t.eq).sort(byPosPrio);
+    renderAll();await updateTaskPositions(reorder(qItems,t,oe,ob));return;}
+  /* Calendrier jour */
+  const dC=u.closest('[data-day]');if(dC){const t=tasks.find(x=>x.id===id);if(!t)return;
+    t.calDay=dC.dataset.day;const r=dC.getBoundingClientRect();t.calHour=Math.min(20,Math.max(7,Math.floor((tc.clientY-r.top)/48)+7));renderAll();await updateTaskDB(t);return;}
+  /* Calendrier non planifié */
+  const uC=u.closest('.cal-side');if(uC){const t=tasks.find(x=>x.id===id);if(!t)return;
+    t.calDay=null;t.calHour=null;renderAll();await updateTaskDB(t);return;}
+  /* Notes */
+  const nL=u.closest('.notes-list');if(nL){const n=notes.find(x=>x.id===id);if(!n)return;
+    const vis=(notesCatFilter==='all'?notes:notes.filter(x=>x.cat===notesCatFilter)).sort(byPos);
+    renderAll();await updateNotePositions(reorder(vis,n,oe,ob));return;}
+  /* Habitudes (vue habitudes) */
+  const hG=u.closest('.habits-grid');if(hG){const h=habits.find(x=>x.id===id);if(!h)return;
+    renderAll();await updateHabitPositions(reorder(habits.slice().sort(byPos),h,oe,ob));return;}
+  /* Habitudes (vue focus) */
+  const fH=u.closest('#focus-habits-section');if(fH){const h=habits.find(x=>x.id===id);if(!h)return;
+    const els=[...fH.querySelectorAll('[data-id]')];const items=els.map(el=>habits.find(x=>x.id===el.dataset.id)).filter(Boolean);
+    renderAll();await updateHabitPositions(reorder(items,h,oe,ob));return;}
+  /* Tâches focus */
+  const fT=u.closest('#focus-top3-section');if(fT){const t=tasks.find(x=>x.id===id);if(!t)return;
+    const els=[...fT.querySelectorAll('[data-id]')];const items=els.map(el=>tasks.find(x=>x.id===el.dataset.id)).filter(Boolean);
+    renderAll();await updateTaskPositions(reorder(items,t,oe,ob));return;}
+}
 
 /* ═══ INIT ═══ */
 const mq=window.matchMedia('(max-width:768px)');

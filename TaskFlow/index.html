@@ -88,7 +88,7 @@
     <div id="v-notes" class="vw"><div class="notes-wrap">
       <div class="notes-side" id="notes-side"><div class="notes-toolbar"><div class="notes-cats" id="notes-cats">
         <button class="notes-cat-btn act" data-nc="all">Toutes</button><button class="notes-cat-btn" data-nc="travail">Travail</button><button class="notes-cat-btn" data-nc="personnel">Personnel</button><button class="notes-cat-btn" data-nc="idees">Idées</button><button class="notes-cat-btn" data-nc="projets">Projets</button><button class="notes-cat-btn" data-nc="autre">Autre</button>
-      </div><button class="notes-new-btn" onclick="createNote()">+ Nouvelle note</button></div><div class="notes-list" id="notes-list"></div></div>
+      </div><button class="notes-new-btn" onclick="createNote()">+ Nouvelle note</button></div><div class="notes-list" id="notes-list" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="notesDrop(event)"></div></div>
       <div class="notes-editor" id="notes-editor">
         <div id="notes-empty-state" class="notes-editor-empty">&#128221; Sélectionnez ou créez une note</div>
         <div id="notes-form" class="notes-edit-wrap" style="display:none">
@@ -152,7 +152,7 @@
 </div></div>
 <div class="toast-box" id="toasts"></div>
 
-<script src="js/db.js?v=2"></script>
-<script src="js/app.js?v=2"></script>
+<script src="js/db.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>

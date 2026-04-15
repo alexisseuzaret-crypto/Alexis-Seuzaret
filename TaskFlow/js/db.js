@@ -7,12 +7,12 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let tasks=[],habits=[],notes=[];
 
 /* ═══ MAPPING DB <-> APP ═══ */
-function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null}}
-function taskToRow(t){return{title:t.title,description:t.desc||'',category:t.cat||'travail',priority:t.prio||'moyenne',duration:t.dur||'',due_date:t.due||null,completed:t.status==='done',status:t.status||'todo',quadrant:t.eq||'plan',cal_day:t.calDay||null,cal_hour:t.calHour||null,completed_at:t.completedAt||null,recurrence_type:t.recurrence||'never',recurrence_day:t.recurDay||null}}
-function rowToHabit(r){return{id:String(r.id),name:r.name||'',checks:r.completions||{}}}
-function habitToRow(h){return{name:h.name,completions:h.checks||{}}}
-function rowToNote(r){return{id:String(r.id),title:r.title||'',content:r.content||'',cat:r.category||'autre',createdAt:r.created_at,updatedAt:r.updated_at}}
-function noteToRow(n){return{title:n.title,content:n.content||'',category:n.cat||'autre'}}
+function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
+function taskToRow(t){return{title:t.title,description:t.desc||'',category:t.cat||'travail',priority:t.prio||'moyenne',duration:t.dur||'',due_date:t.due||null,completed:t.status==='done',status:t.status||'todo',quadrant:t.eq||'plan',cal_day:t.calDay||null,cal_hour:t.calHour||null,completed_at:t.completedAt||null,recurrence_type:t.recurrence||'never',recurrence_day:t.recurDay||null,position:t.position??null}}
+function rowToHabit(r){return{id:String(r.id),name:r.name||'',checks:r.completions||{},position:r.position??null}}
+function habitToRow(h){return{name:h.name,completions:h.checks||{},position:h.position??null}}
+function rowToNote(r){return{id:String(r.id),title:r.title||'',content:r.content||'',cat:r.category||'autre',createdAt:r.created_at,updatedAt:r.updated_at,position:r.position??null}}
+function noteToRow(n){return{title:n.title,content:n.content||'',category:n.cat||'autre',position:n.position??null}}
 
 /* ═══ CRUD TASKS ═══ */
 async function loadTasks(){
@@ -125,6 +125,23 @@ async function updateNoteDB(n){
     console.warn('[DB] updateNote ← OK');
   }
 }
+/* ═══ BATCH POSITIONS ═══ */
+async function updateTaskPositions(list){
+  if(!list.length)return;
+  console.warn('[DB] updateTaskPositions →',list.length,'tâches');
+  await Promise.all(list.map(t=>sb.from('tasks').update({position:t.position}).eq('id',t.id)));
+}
+async function updateNotePositions(list){
+  if(!list.length)return;
+  console.warn('[DB] updateNotePositions →',list.length,'notes');
+  await Promise.all(list.map(n=>sb.from('notes').update({position:n.position}).eq('id',n.id)));
+}
+async function updateHabitPositions(list){
+  if(!list.length)return;
+  console.warn('[DB] updateHabitPositions →',list.length,'habitudes');
+  await Promise.all(list.map(h=>sb.from('habits').update({position:h.position}).eq('id',h.id)));
+}
+
 async function deleteNoteDB(id){
   console.warn('[DB] deleteNote → id='+id);
   const{data,error}=await sb.from('notes').delete().eq('id',id).select();

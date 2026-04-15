@@ -302,7 +302,13 @@ button,input,textarea,select{font-family:inherit}
 .toast-box{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{padding:12px 18px;background:var(--surf2);border:1px solid var(--or);border-radius:var(--r);font-size:.84rem;animation:tIn .3s;box-shadow:var(--sh)}
 @keyframes tIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
-.touch-ghost{position:fixed;z-index:1000;pointer-events:none;opacity:.85;transform:scale(.95);box-shadow:0 8px 32px rgba(0,0,0,.5);border-radius:var(--r);max-width:250px}
+.touch-ghost{position:fixed;z-index:1000;pointer-events:none;opacity:.85;transform:rotate(2deg) scale(1.03);box-shadow:0 16px 48px rgba(0,0,0,.55);border-radius:var(--r);max-width:260px}
+/* ══ DRAG & DROP ══ */
+.drag-ghost{opacity:.25!important;cursor:grabbing!important;transform:none!important;box-shadow:none!important}
+[data-id].drop-before{box-shadow:0 -3px 0 0 var(--or)!important;border-radius:var(--r)}
+[data-id].drop-after{box-shadow:0 3px 0 0 var(--or)!important;border-radius:var(--r)}
+.notes-list.dragover,.habits-grid.dragover{background:var(--orGlow);border-radius:var(--r2)}
+#focus-top3-section.dragover,#focus-habits-section.dragover{outline:2px dashed var(--or);border-radius:var(--r2);outline-offset:4px}
 
 /* ══ SEARCH ══ */
 .search-wrap{position:relative;flex:1;max-width:320px}
