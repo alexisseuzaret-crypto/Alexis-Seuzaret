@@ -278,33 +278,46 @@ async function upsertWater(date,glasses){
    alter table saved_meals enable row level security;
    create policy "all" on saved_meals for all using (true) with check (true);
 */
+let savedMealsLocalOnly=false; /* true si table Supabase indisponible */
 function rowToSavedMeal(r){return{id:String(r.id),name:r.name||'',description:r.description||'',calories:r.calories||0,proteines:parseFloat(r.proteines)||0,glucides:parseFloat(r.glucides)||0,lipides:parseFloat(r.lipides)||0}}
+function _syncFavLocal(){localStorage.setItem('tf-saved-meals',JSON.stringify(savedMeals))}
 async function loadSavedMeals(){
   const{data,error}=await sb.from('saved_meals').select('*').order('created_at',{ascending:false});
   if(error){
-    /* Table pas encore créée → fallback localStorage */
     console.warn('[DB] saved_meals indisponible, utilisation localStorage');
+    savedMealsLocalOnly=true;
     try{savedMeals=JSON.parse(localStorage.getItem('tf-saved-meals')||'[]')}catch(e){savedMeals=[]}
     return;
   }
+  savedMealsLocalOnly=false;
   savedMeals=(data||[]).map(rowToSavedMeal);
 }
 async function insertSavedMeal(m){
+  if(savedMealsLocalOnly){
+    const item={id:Date.now().toString(),name:m.name,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides};
+    savedMeals.unshift(item);_syncFavLocal();return item;
+  }
   const{data,error}=await sb.from('saved_meals').insert({name:m.name,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides}).select();
   if(error){
-    console.warn('[DB] insertSavedMeal erreur, fallback localStorage:',error);
-    const arr=savedMeals.slice();
+    console.warn('[DB] insertSavedMeal erreur, bascule localStorage:',error);
+    savedMealsLocalOnly=true;
     const item={id:Date.now().toString(),name:m.name,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides};
-    arr.unshift(item);savedMeals=arr;localStorage.setItem('tf-saved-meals',JSON.stringify(arr));
-    return item;
+    savedMeals.unshift(item);_syncFavLocal();return item;
   }
   if(data&&data[0])return rowToSavedMeal(data[0]);
   return null;
 }
 async function deleteSavedMealDB(id){
-  await sb.from('saved_meals').delete().eq('id',id);
+  if(!savedMealsLocalOnly){
+    const{error}=await sb.from('saved_meals').delete().eq('id',id);
+    if(error){
+      console.warn('[DB] deleteSavedMealDB erreur:',error);
+      toast('Erreur suppression favori — '+error.message);
+      return; /* ne pas retirer localement si Supabase a échoué */
+    }
+  }
   savedMeals=savedMeals.filter(x=>x.id!==id);
-  localStorage.setItem('tf-saved-meals',JSON.stringify(savedMeals));
+  if(savedMealsLocalOnly)_syncFavLocal();
 }
 
 async function deleteNoteDB(id){

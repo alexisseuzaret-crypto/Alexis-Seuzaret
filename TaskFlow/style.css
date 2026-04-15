@@ -406,7 +406,7 @@ button,input,textarea,select{font-family:inherit}
 
 /* ══ SPORT ══ */
 .sport-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
-.sport-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);padding:22px}
+.sport-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);padding:22px;height:100%;box-sizing:border-box}
 .sport-card-title{font-size:.95rem;font-weight:700;color:var(--tx);margin-bottom:18px}
 /* Pompes */
 .pushup-card{text-align:center;padding:36px 24px;position:relative}

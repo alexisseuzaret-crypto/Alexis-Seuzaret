@@ -1080,6 +1080,15 @@ function setAlimMode(m){
 }
 
 /* Calcul automatique depuis la description (ex: "100g de riz", "2 oeufs") */
+/* Correspondance par mot entier (min 3 chars) pour éviter les faux positifs */
+function findFoodByName(name){
+  const words=name.split(/\s+/).filter(w=>w.length>=3);
+  if(!words.length)return null;
+  return FOOD_DB.find(f=>{
+    const dbWords=f.n.toLowerCase().split(/\s+/);
+    return words.some(w=>dbWords.some(dw=>dw===w||dw.startsWith(w+'s')||dw.startsWith(w+'e')));
+  })||null;
+}
 function calculateFreeItem(){
   const raw=document.getElementById('free-desc')?.value.trim();
   if(!raw){toast('Entrez une description d\'abord');return}
@@ -1088,9 +1097,8 @@ function calculateFreeItem(){
   const gm=lower.match(/^(\d+(?:[.,]\d+)?)\s*g(?:r(?:ammes?)?)?\s*(?:de\s+|d')?(.+)$/);
   if(gm){
     const grams=parseFloat(gm[1].replace(',','.'));
-    const name=gm[2].trim();
-    const food=FOOD_DB.find(f=>f.n.toLowerCase().includes(name)||name.includes(f.n.toLowerCase().split(' ')[0]));
-    if(food){setFreeFields(food,grams,raw);return}
+    const food=findFoodByName(gm[2].trim());
+    if(food){setFreeFields(food,grams);return}
   }
   /* Pattern: X <aliment> (par unité) */
   const um=lower.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
@@ -1098,19 +1106,21 @@ function calculateFreeItem(){
     const count=parseFloat(um[1].replace(',','.'));
     const name=um[2].trim();
     let unitG=null;
-    for(const[key,g] of Object.entries(FOOD_UNIT_WG)){if(name.includes(key)){unitG=g;break}}
+    /* Cherche une clé du FOOD_UNIT_WG présente comme mot entier dans la description */
+    for(const[key,g] of Object.entries(FOOD_UNIT_WG)){
+      if(name.split(/\s+/).some(w=>w===key)){unitG=g;break}
+    }
     if(unitG){
       const grams=count*unitG;
-      const food=FOOD_DB.find(f=>f.n.toLowerCase().includes(name.split(' ')[0])||name.split(' ')[0].includes(f.n.toLowerCase().split(' ')[0]));
-      if(food){setFreeFields(food,grams,raw);toast(`${count}×${name} ≈ ${grams}g (${food.n})`);return}
-      /* Poids unitaire connu mais pas dans FOOD_DB */
+      const food=findFoodByName(name);
+      if(food){setFreeFields(food,grams);toast(`${count}×${name} ≈ ${grams}g (${food.n})`);return}
       toast(`Poids estimé ${grams}g — entrez les calories manuellement`);
       return;
     }
   }
   toast('Aliment non reconnu — entrez les valeurs manuellement');
 }
-function setFreeFields(food,grams,raw){
+function setFreeFields(food,grams){
   const el=id=>document.getElementById(id);
   if(el('free-cal'))el('free-cal').value=Math.round(food.k*grams/100);
   if(el('free-prot'))el('free-prot').value=(food.p*grams/100).toFixed(1);
@@ -1152,7 +1162,7 @@ function renderFavorisPanel(){
     ?`<div class="favoris-save-row"><input id="fav-name-input" placeholder="Nom du repas…" onkeydown="if(event.key==='Enter')confirmSaveFav()"><button class="favoris-save-confirm" onclick="confirmSaveFav()">Sauvegarder</button></div>`
     :'';
   const listHTML=savedMeals.length
-    ?savedMeals.map((fav,i)=>`<div class="fav-item"><div class="fav-item-info" onclick="logFav(${i})"><div class="fav-item-name">${escapeHtml(fav.name)}</div><div class="fav-item-desc">${escapeHtml(fav.description)}</div></div><span class="fav-item-cal">${fav.calories} cal</span><button class="fav-item-del" onclick="event.stopPropagation();delFav(${i})" title="Supprimer">&#10005;</button></div>`).join('')
+    ?savedMeals.map(fav=>`<div class="fav-item"><div class="fav-item-info" onclick="logFav('${fav.id}')"><div class="fav-item-name">${escapeHtml(fav.name)}</div><div class="fav-item-desc">${escapeHtml(fav.description)}</div></div><span class="fav-item-cal">${fav.calories} cal</span><button class="fav-item-del" onclick="event.stopPropagation();delFav('${fav.id}')" title="Supprimer">&#10005;</button></div>`).join('')
     :'<div class="favoris-empty">Aucun repas favori — sauvegardez depuis la liste de vos repas</div>';
   p.innerHTML=`<div class="favoris-panel-hd"><span class="favoris-panel-title">&#9733; Mes repas favoris</span><button class="favoris-panel-close" onclick="closeFavorisPanel()">&#10005;</button></div>${saveRowHTML}${listHTML}`;
   if(pendingSaveMealId)setTimeout(()=>{const i=document.getElementById('fav-name-input');if(i)i.focus()},50);
@@ -1169,17 +1179,18 @@ function saveMealFav(mealId){
   pendingSaveMealId=mealId;
   openFavorisPanel();
 }
-async function logFav(idx){
-  const fav=savedMeals[idx];if(!fav)return;
+async function logFav(id){
+  const fav=savedMeals.find(x=>x.id===id);if(!fav)return;
   const meal={id:null,date:dateKey(new Date()),moment:alimMoment,description:fav.description,calories:fav.calories,proteines:fav.proteines,glucides:fav.glucides,lipides:fav.lipides};
   const result=await insertMeal(meal);
   if(result){mealsLog.unshift(result);renderAlimentation();toast(`${fav.name} — ${fav.calories} cal`)}
   closeFavorisPanel();
 }
-async function delFav(idx){
-  const fav=savedMeals[idx];if(!fav)return;
+async function delFav(id){
+  const fav=savedMeals.find(x=>x.id===id);if(!fav)return;
   await deleteSavedMealDB(fav.id);
   renderFavorisPanel();
+  if(!document.getElementById('favoris-panel')?.classList.contains('open'))return;
   toast('Favori supprimé');
 }
 
@@ -1430,7 +1441,7 @@ function onTM(e){
   if(touchGhost){touchGhost.style.left=(t.clientX-60)+'px';touchGhost.style.top=(t.clientY-30)+'px';}
   clearDragUI();document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));
   const u=document.elementFromPoint(t.clientX,t.clientY);if(!u)return;
-  const zone=u.closest('[data-st]')||u.closest('[data-eq]')||u.closest('[data-day]')||u.closest('.cal-side')||u.closest('.notes-list')||u.closest('.habits-grid')||u.closest('#focus-top3-section')||u.closest('#focus-habits-section')||u.closest('.project-tasks-list');
+  const zone=u.closest('[data-st]')||u.closest('[data-eq]')||u.closest('[data-day]')||u.closest('.cal-side')||u.closest('.notes-list')||u.closest('.habits-grid')||u.closest('#focus-top3-section')||u.closest('.project-tasks-list');
   if(zone)zone.classList.add('dragover');
   const item=u.closest('[data-id]');
   if(item&&item.dataset.id!==touchDragId){
@@ -1473,10 +1484,6 @@ async function onTE(e){
   /* Habitudes (vue habitudes) */
   const hG=u.closest('.habits-grid');if(hG){const h=habits.find(x=>x.id===id);if(!h)return;
     renderAll();await updateHabitPositions(reorder(habits.slice().sort(byPos),h,oe,ob));return;}
-  /* Habitudes (vue focus) */
-  const fH=u.closest('#focus-habits-section');if(fH){const h=habits.find(x=>x.id===id);if(!h)return;
-    const els=[...fH.querySelectorAll('[data-id]')];const items=els.map(el=>habits.find(x=>x.id===el.dataset.id)).filter(Boolean);
-    renderAll();await updateHabitPositions(reorder(items,h,oe,ob));return;}
   /* Tâches focus */
   const fT=u.closest('#focus-top3-section');if(fT){const t=tasks.find(x=>x.id===id);if(!t)return;
     const els=[...fT.querySelectorAll('[data-id]')];const items=els.map(el=>tasks.find(x=>x.id===el.dataset.id)).filter(Boolean);
