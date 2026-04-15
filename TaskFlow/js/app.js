@@ -1,6 +1,8 @@
 let filterCategory='all',filterPriority='all',calOff=0,calView='week',editingId=null;
 let activeView='focus',selectedNoteId=null,notesCatFilter='all',notesDraft=null,searchQuery='';
 let activeProjectId=null,projectsFilter='all',editingProjectId=null,editingProjectTaskId=null;
+let userSettings={weight:75,caloricGoal:1800,fitnessGoal:'perte_poids'};
+(function(){const s=localStorage.getItem('tf-settings');if(s)try{Object.assign(userSettings,JSON.parse(s))}catch(e){}})();
 let completionChart=null,streaksCache={};
 
 const escapeHtml=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
@@ -74,6 +76,7 @@ function fabAction(){
   else if(activeView==='projets'){if(activeProjectId)openProjectTaskModal();else openProjectModal();}
   else if(activeView==='sport')return;
   else if(activeView==='alimentation')return;
+  else if(activeView==='reglages')return;
 
   else if(activeView==='calendar'){openModal();setTimeout(()=>{let d;if(calView==='day')d=dayDate(calOff)[0];else if(calView==='week')d=weekDates(calOff)[0];else{d=new Date();d=new Date(d.getFullYear(),d.getMonth()+calOff,1)}document.getElementById('f-due').value=dateKey(d)},50)}
   else openModal();
@@ -259,21 +262,39 @@ async function kDrop(e){
   renderAll();await updateTaskPositions(updated);
 }
 
-/* ═══ FOCUS ═══ */
+/* ═══ FOCUS / DASHBOARD DE VIE ═══ */
+function computeDashboardScore(){
+  const today=dateKey(new Date());
+  /* Tâches : score jusqu'à 25 pts */
+  const doneToday=tasks.filter(t=>t.completedAt===today).length;
+  const taskScore=Math.min(25,doneToday*8);
+  /* Habitudes : score jusqu'à 25 pts */
+  const habitsDone=habits.filter(hb=>hb.checks&&hb.checks[today]).length;
+  const habitScore=habits.length?Math.round(habitsDone/habits.length*25):0;
+  /* Pompes : score jusqu'à 25 pts */
+  const todayPushup=pushupLog.find(p=>p.date===today);
+  const pushupScore=todayPushup&&todayPushup.completed?25:todayPushup?Math.round(Math.min(1,todayPushup.count/pushupTodayCount())*25):0;
+  /* Nutrition : score jusqu'à 25 pts */
+  const todayMeals=mealsLog.filter(m=>m.date===today);
+  const todayCal=Math.round(todayMeals.reduce((s,m)=>s+(m.calories||0),0));
+  const goal=userSettings.caloricGoal||1800;
+  const ratio=todayCal/goal;
+  const nutriScore=todayCal===0?0:ratio<=1.05?25:ratio<=1.15?15:ratio<=1.3?8:0;
+  return{total:taskScore+habitScore+pushupScore+nutriScore,taskScore,habitScore,pushupScore,nutriScore,doneToday,habitsDone,todayPushup,todayCal};
+}
+
 function renderFocus(){
   const now=new Date(),h=now.getHours(),today=dateKey(now);
-  const greeting=h<12?'Bonjour \u2600\uFE0F':h<18?'Bon après-midi \uD83C\uDF24\uFE0F':'Bonsoir \uD83C\uDF19';
+  const greeting=h<12?'Bonjour &#9728;':h<18?'Bon après-midi &#127780;':'Bonsoir &#127769;';
   const dateStr=JOURS_FULL[now.getDay()]+' '+now.getDate()+' '+MOIS[now.getMonth()]+' '+now.getFullYear();
-  const tasksDoneToday=tasks.filter(t=>t.completedAt===today).length;
-  const habitsToday=habits.filter(hb=>hb.checks&&hb.checks[today]).length;
   const pending=tasks.filter(t=>t.status!=='done');
   const scored=pending.map(t=>{let s=(5-(PRIORITY_ORDER[t.prio]||2))*10;if(t.due){const d=daysUntil(t.due);if(d<=0)s+=100;else if(d<=1)s+=80;else if(d<=3)s+=50;else if(d<=7)s+=20}if(t.eq==='do')s+=30;return{...t,_s:s}}).sort((a,b)=>b._s-a._s).slice(0,3);
-  /* Respecter l'ordre manuel si positions définies */
   const top3Sorted=scored.some(x=>tasks.find(t=>t.id===x.id)?.position!=null)
     ?scored.map(x=>tasks.find(t=>t.id===x.id)).filter(Boolean).sort(byPos)
     :scored.map(x=>tasks.find(t=>t.id===x.id)).filter(Boolean);
   const top3=top3Sorted.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=daysUntil(t.due);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
     return `<div class="focus-task${d?' done':''}" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div><button class="card-act-btn" onclick="openModal('${t.id}')" style="flex-shrink:0;opacity:.6" title="Modifier">&#9998;</button></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
+  const habitsToday=habits.filter(hb=>hb.checks&&hb.checks[today]).length;
   const habitPct=habits.length?Math.round(habitsToday/habits.length*100):0;
   const sortedHabits=habits.slice().sort(byPos);
   const habitsHTML=sortedHabits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=streaksCache[hb.id]||{cur:0,best:0};
@@ -282,13 +303,159 @@ function renderFocus(){
   const deadlines=upcoming.map(t=>{const dd=daysUntil(t.due);const u=dd<=1;const w=dd<=2&&!u;const cls=u?'urgent':w?'warning':'';const dc=u?'red':w?'orange':'normal';const dl=dd<0?'En retard':dd===0?"Aujourd'hui":dd===1?'Demain':dd+'j';
     return `<div class="focus-deadline ${cls}"><div class="focus-deadline-info"><div class="focus-deadline-title">${escapeHtml(t.title)}</div><div class="focus-deadline-cat"><span class="badge b-${t.cat}" style="font-size:.58rem">${CATEGORY_LABELS[t.cat]}</span></div></div><span class="focus-deadline-days ${dc}">${dl}</span></div>`}).join('')||'<div class="focus-empty">Aucune échéance dans les 3 prochains jours</div>';
   const focusProjets=projects.filter(p=>p.status==='en_cours').slice(0,3).map(p=>{const pct=computeProgress(p.id);return`<div class="focus-projet-item" onclick="switchView('projets');openProjectDetail('${p.id}')"><div class="focus-projet-color" style="background:${p.color}"></div><div class="focus-projet-info"><div class="focus-projet-name">${escapeHtml(p.name)}</div><div class="focus-projet-bar"><div class="focus-projet-fill" style="width:${pct}%;background:${p.color}"></div></div></div><span class="focus-projet-pct">${pct}%</span></div>`}).join('')||'<div class="focus-empty">Aucun projet en cours</div>';
-  document.getElementById('focus-content').innerHTML=`<div class="focus-header"><div class="focus-greeting">${greeting}</div><div class="focus-date">${dateStr}</div><div class="focus-scores"><div class="focus-score-item"><div class="focus-score-num">${tasksDoneToday}</div><div class="focus-score-label">Tâches terminées</div></div><div class="focus-score-item"><div class="focus-score-num">${habitsToday}/${habits.length}</div><div class="focus-score-label">Habitudes du jour</div></div><div class="focus-score-item"><div class="focus-score-num">${pending.length}</div><div class="focus-score-label">Restantes</div></div></div></div>
+
+  /* Score anneau */
+  const sc=computeDashboardScore();
+  const svgR=42,circ=2*Math.PI*svgR,dash=circ*(sc.total/100),ringStroke=sc.total>=80?'#4ade80':sc.total>=50?'#fbbf24':'#f87171';
+  const ringHTML=`<svg class="dash-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="${svgR}" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="10"/><circle cx="50" cy="50" r="${svgR}" fill="none" stroke="${ringStroke}" stroke-width="10" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 50 50)"/><text x="50" y="46" text-anchor="middle" font-size="20" font-weight="700" fill="#fff">${sc.total}</text><text x="50" y="60" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.75)">/100</text></svg>`;
+
+  /* Mini pompes */
+  const todayPushup=sc.todayPushup;
+  const pushupGoal=pushupTodayCount();
+  const pPct=todayPushup?Math.min(100,Math.round(todayPushup.count/pushupGoal*100)):0;
+  const pColor=todayPushup&&todayPushup.completed?'var(--green)':pPct>=50?'var(--or)':'var(--tx3)';
+  const pomposHTML=`<div class="dash-mini-card" onclick="switchView('sport')">
+    <div class="dash-mini-header"><span class="dash-mini-icon">&#128170;</span><span class="dash-mini-title">Pompes</span><span class="dash-mini-badge" style="color:${pColor}">${todayPushup?todayPushup.count:0}/${pushupGoal}</span></div>
+    <div class="dash-mini-bar"><div class="dash-mini-fill" style="width:${pPct}%;background:${pColor}"></div></div>
+    ${todayPushup&&todayPushup.completed?'<div class="dash-mini-ok">&#9989; Défi validé</div>':'<div class="dash-mini-hint">Appuyer pour ouvrir Sport</div>'}
+  </div>`;
+
+  /* Mini nutrition */
+  const goal=userSettings.caloricGoal||1800;
+  const calPct=Math.min(100,Math.round(sc.todayCal/goal*100));
+  const calColor=sc.todayCal<goal*0.9?'var(--green)':sc.todayCal<=goal*1.1?'var(--or)':'var(--red)';
+  const todayWater=waterLog.find(w=>w.date===today);
+  const glasses=todayWater?todayWater.glasses:0;
+  const nutriHTML=`<div class="dash-mini-card" onclick="switchView('alimentation')">
+    <div class="dash-mini-header"><span class="dash-mini-icon">&#127869;</span><span class="dash-mini-title">Nutrition</span><span class="dash-mini-badge" style="color:${calColor}">${sc.todayCal}/${goal} cal</span></div>
+    <div class="dash-mini-bar"><div class="dash-mini-fill" style="width:${calPct}%;background:${calColor}"></div></div>
+    <div class="dash-mini-water">&#128167; Eau : <strong>${glasses}/8</strong> verres</div>
+  </div>`;
+
+  document.getElementById('focus-content').innerHTML=`
+  <div class="dash-header">
+    <div class="dash-header-left">
+      <div class="focus-greeting">${greeting}</div>
+      <div class="focus-date">${dateStr}</div>
+    </div>
+    <div class="dash-header-right">
+      ${ringHTML}
+      <button class="dash-bilan-btn" onclick="openBilanHebdo()">Bilan semaine</button>
+      <button class="dash-bilan-btn" onclick="switchView('reglages')" style="margin-top:4px;background:rgba(255,255,255,.15);color:#fff">&#9881; Réglages</button>
+    </div>
+  </div>
+  <div class="dash-mini-row">${pomposHTML}${nutriHTML}</div>
   <div class="focus-section" id="focus-top3-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusTasksDrop(event)"><div class="focus-section-title"><span>&#127919;</span> Mes 3 priorités du jour</div>${top3}</div>
   <div class="focus-section" id="focus-habits-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusHabitsDrop(event)"><div class="focus-section-title"><span>&#9989;</span> Habitudes du jour</div><div class="focus-habits-count">${habitsToday}/${habits.length} (${habitPct}%)</div><div class="focus-habits-bar"><div class="focus-habits-fill" style="width:${habitPct}%"></div></div>${habitsHTML}</div>
   <div class="focus-section"><div class="focus-section-title"><span>&#9200;</span> Échéances proches</div>${deadlines}</div>
   <div class="focus-section"><div class="focus-section-title"><span>&#128193;</span> Projets en cours</div>${focusProjets}</div>`;
 }
 async function toggleFocusHabit(id){await toggleHabitDay(id,dateKey(new Date()))}
+
+/* ═══ BILAN HEBDOMADAIRE ═══ */
+function openBilanHebdo(){
+  const today=new Date();
+  /* 7 derniers jours */
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()-6+i);return dateKey(d)});
+  /* Tâches terminées */
+  const tasksDone=days.map(d=>tasks.filter(t=>t.completedAt===d).length);
+  const totalTasks=tasksDone.reduce((a,b)=>a+b,0);
+  /* Habitudes */
+  const habitsDonePerDay=days.map(d=>habits.filter(hb=>hb.checks&&hb.checks[d]).length);
+  const habitTotal=habitsDonePerDay.reduce((a,b)=>a+b,0);
+  const habitMax=habits.length*7;
+  const habitPct=habitMax?Math.round(habitTotal/habitMax*100):0;
+  /* Pompes */
+  const pompesDays=days.map(d=>pushupLog.find(p=>p.date===d));
+  const totalPompes=pompesDays.reduce((s,p)=>s+(p?p.count:0),0);
+  const pompesDone=pompesDays.filter(p=>p&&p.completed).length;
+  /* Sport */
+  const runs=runningLog.filter(r=>days.includes(r.date));
+  const swims=swimmingLog.filter(s=>days.includes(s.date));
+  const sportCal=runs.reduce((s,r)=>s+(r.calories||0),0)+swims.reduce((s,sw)=>s+(sw.calories||0),0);
+  /* Nutrition */
+  const calPerDay=days.map(d=>{const m=mealsLog.filter(ml=>ml.date===d);return Math.round(m.reduce((s,ml)=>s+(ml.calories||0),0))});
+  const avgCal=days.length?Math.round(calPerDay.reduce((a,b)=>a+b,0)/days.length):0;
+  const goal=userSettings.caloricGoal||1800;
+  /* Eau */
+  const waterOk=days.filter(d=>{const w=waterLog.find(x=>x.date===d);return w&&w.glasses>=8}).length;
+  /* Labels */
+  const labels=days.map(d=>{const dt=new Date(d+'T00:00:00');return JOURS[(dt.getDay()+6)%7]});
+  /* Score moyen */
+  const scores=days.map(d=>{
+    const dn=tasks.filter(t=>t.completedAt===d).length;
+    const hn=habits.length?habits.filter(hb=>hb.checks&&hb.checks[d]).length:0;
+    const hp=pushupLog.find(p=>p.date===d);
+    const mn=mealsLog.filter(m=>m.date===d);
+    const cal=Math.round(mn.reduce((s,m)=>s+(m.calories||0),0));
+    const ts=Math.min(25,dn*8);
+    const hs=habits.length?Math.round(hn/habits.length*25):0;
+    const ps=hp&&hp.completed?25:hp?Math.round(Math.min(1,hp.count/pushupTodayCount())*25):0;
+    const ratio=cal/goal;
+    const ns=cal===0?0:ratio<=1.05?25:ratio<=1.15?15:ratio<=1.3?8:0;
+    return ts+hs+ps+ns;
+  });
+  const avgScore=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+
+  const barsHTML=days.map((d,i)=>`<div class="bilan-bar-col"><div class="bilan-bar-wrap"><div class="bilan-bar-fill" style="height:${scores[i]}%;background:${scores[i]>=80?'var(--green)':scores[i]>=50?'var(--or)':'var(--red)'}"></div></div><div class="bilan-bar-label">${labels[i]}</div></div>`).join('');
+
+  document.getElementById('bilan-content').innerHTML=`
+    <div class="bilan-score-row">
+      <div class="bilan-big-score" style="color:${avgScore>=80?'var(--green)':avgScore>=50?'var(--or)':'var(--red)'}">${avgScore}<span style="font-size:1rem;color:var(--tx3)">/100</span></div>
+      <div class="bilan-big-label">Score moyen</div>
+    </div>
+    <div class="bilan-bars">${barsHTML}</div>
+    <div class="bilan-stats-grid">
+      <div class="bilan-stat"><div class="bilan-stat-val">${totalTasks}</div><div class="bilan-stat-label">Tâches terminées</div></div>
+      <div class="bilan-stat"><div class="bilan-stat-val">${habitPct}%</div><div class="bilan-stat-label">Habitudes réalisées</div></div>
+      <div class="bilan-stat"><div class="bilan-stat-val">${totalPompes}</div><div class="bilan-stat-label">Pompes totales</div></div>
+      <div class="bilan-stat"><div class="bilan-stat-val">${pompesDone}/7</div><div class="bilan-stat-label">Jours défi validé</div></div>
+      <div class="bilan-stat"><div class="bilan-stat-val">${runs.length+swims.length}</div><div class="bilan-stat-label">Séances sport</div></div>
+      <div class="bilan-stat"><div class="bilan-stat-val">${sportCal}</div><div class="bilan-stat-label">Cal brûlées</div></div>
+      <div class="bilan-stat"><div class="bilan-stat-val">${avgCal}</div><div class="bilan-stat-label">Cal/jour moy.</div></div>
+      <div class="bilan-stat"><div class="bilan-stat-val">${waterOk}/7</div><div class="bilan-stat-label">Jours objectif eau</div></div>
+    </div>`;
+  document.getElementById('bilan-modal').classList.add('open');
+}
+function closeBilanModal(){document.getElementById('bilan-modal').classList.remove('open')}
+
+/* ═══ RÉGLAGES ═══ */
+function renderReglages(){
+  document.getElementById('v-reglages').innerHTML=`
+    <div class="reglages-wrap">
+      <div class="reglages-header">
+        <button class="back-btn" onclick="switchView('focus')">&#8592; Retour</button>
+        <h2>Réglages</h2>
+      </div>
+      <div class="reglages-section">
+        <div class="reglages-title">Profil</div>
+        <label class="reglages-label">Poids (kg)
+          <input class="reglages-input" id="rg-weight" type="number" min="30" max="200" value="${userSettings.weight}">
+        </label>
+        <label class="reglages-label">Objectif calorique (kcal/jour)
+          <input class="reglages-input" id="rg-calgoal" type="number" min="800" max="5000" value="${userSettings.caloricGoal}">
+        </label>
+        <label class="reglages-label">Objectif fitness
+          <select class="reglages-select" id="rg-fitgoal">
+            <option value="perte_poids"${userSettings.fitnessGoal==='perte_poids'?' selected':''}>Perte de poids</option>
+            <option value="maintien"${userSettings.fitnessGoal==='maintien'?' selected':''}>Maintien</option>
+            <option value="prise_masse"${userSettings.fitnessGoal==='prise_masse'?' selected':''}>Prise de masse</option>
+          </select>
+        </label>
+      </div>
+      <button class="reglages-save-btn" onclick="saveUserSettings()">Enregistrer</button>
+    </div>`;
+}
+function saveUserSettings(){
+  const w=parseInt(document.getElementById('rg-weight')?.value||userSettings.weight);
+  const c=parseInt(document.getElementById('rg-calgoal')?.value||userSettings.caloricGoal);
+  const f=document.getElementById('rg-fitgoal')?.value||userSettings.fitnessGoal;
+  userSettings.weight=w;userSettings.caloricGoal=c;userSettings.fitnessGoal=f;
+  alimCaloricGoal=c;
+  localStorage.setItem('tf-settings',JSON.stringify(userSettings));
+  toast('Réglages enregistrés');
+  switchView('focus');
+}
 
 /* ═══ CALENDAR ═══ */
 function weekDates(off){const n=new Date(),d=n.getDay(),m=new Date(n);m.setDate(n.getDate()-(d===0?6:d-1)+off*7);return Array.from({length:7},(_,i)=>{const x=new Date(m);x.setDate(m.getDate()+i);return x})}
@@ -852,14 +1019,14 @@ function updateRunCalc(){
   const dur=parseFloat(document.getElementById('run-duration')?.value||0);
   const dist=parseFloat(document.getElementById('run-distance')?.value||0);
   const el=document.getElementById('run-result');if(!el)return;
-  el.textContent=(dur>0&&dist>0)?`Tu brûleras ~${Math.round(75*dist*1.036)} calories`:'';
+  el.textContent=(dur>0&&dist>0)?`Tu brûleras ~${Math.round(userSettings.weight*dist*1.036)} calories`:'';
 }
 
 async function saveRun(){
   const dur=parseInt(document.getElementById('run-duration')?.value||0);
   const dist=parseFloat(document.getElementById('run-distance')?.value||0);
   if(!dur||!dist){toast('Durée et distance requises');return}
-  const cal=Math.round(75*dist*1.036);
+  const cal=Math.round(userSettings.weight*dist*1.036);
   const r={id:null,date:dateKey(new Date()),duration:dur,distance:dist,calories:cal};
   const result=await insertRun(r);
   if(result){runningLog.unshift(result);renderSport();toast(`Course enregistrée — ${cal} cal &#128293;`)}
@@ -893,7 +1060,7 @@ async function delSwim(id){
 }
 
 /* ═══ ALIMENTATION ═══ */
-let alimMoment='dejeuner',selectedFoodItem=null,alimCaloricGoal=1800;
+let alimMoment='dejeuner',selectedFoodItem=null,alimCaloricGoal=userSettings.caloricGoal||1800;
 const ALIM_MOMENTS={petit_dej:'Petit-déjeuner',dejeuner:'Déjeuner',diner:'Dîner',snacks:'Snacks'};
 
 function setAlimMoment(m){
@@ -1060,7 +1227,8 @@ const VIEW_RENDERERS={
   projets:renderProjects,
   sport:renderSport,
   alimentation:renderAlimentation,
-  stats:renderStats
+  stats:renderStats,
+  reglages:renderReglages
 };
 function renderAll(){
   habits.forEach(h=>{streaksCache[h.id]=calcStreaks(h)});
@@ -1196,5 +1364,5 @@ initTouchDrag();
   setTimeout(checkDeadlines,2000);
   setInterval(checkDeadlines,36e5);
 })();
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeHabitModal();cancelConfirm();closeMore();closeProjectModal();closeProjectTaskModal()}if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!document.querySelector('.modal-bg.open'))fabAction()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeHabitModal();cancelConfirm();closeMore();closeProjectModal();closeProjectTaskModal();closeBilanModal()}if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!document.querySelector('.modal-bg.open'))fabAction()});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(console.error)}

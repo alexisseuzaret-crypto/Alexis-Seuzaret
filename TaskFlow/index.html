@@ -140,6 +140,7 @@
     <div id="v-sport" class="vw"><div id="sport-content"></div></div>
     <div id="v-alimentation" class="vw"><div id="alim-content"></div></div>
     <div id="v-stats" class="vw"><div id="stats-content"></div></div>
+    <div id="v-reglages" class="vw"></div>
   </div>
 </div>
 
@@ -158,6 +159,7 @@
     <button class="more-item" onclick="switchView('sport');closeMore()">&#127939; Sport</button>
     <button class="more-item" onclick="switchView('alimentation');closeMore()">&#129367; Alimentation</button>
     <button class="more-item" onclick="switchView('stats');closeMore()">&#128200; Stats</button>
+    <button class="more-item" onclick="switchView('reglages');closeMore()">&#9881;&#65039; Réglages</button>
   </div>
 </div>
 <button class="fab" id="fab-btn" onclick="fabAction()">+</button>
@@ -221,8 +223,14 @@
 </div></div>
 <div class="toast-box" id="toasts"></div>
 
+<!-- BILAN HEBDOMADAIRE MODAL -->
+<div class="modal-bg" id="bilan-modal" onclick="if(event.target===this)closeBilanModal()"><div class="modal bilan-modal-inner">
+  <div class="modal-hd"><span>&#128200; Bilan de la semaine</span><button onclick="closeBilanModal()">&#10005;</button></div>
+  <div id="bilan-content"></div>
+</div></div>
+
 <script src="js/food-db.js?v=1"></script>
 <script src="js/db.js?v=6"></script>
-<script src="js/app.js?v=6"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>

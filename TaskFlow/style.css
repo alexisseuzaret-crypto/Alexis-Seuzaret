@@ -486,6 +486,67 @@ button,input,textarea,select{font-family:inherit}
 /* Graphique */
 .alim-chart-wrap{height:140px}
 
+/* ══ DASHBOARD DE VIE (Focus v2) ══ */
+.dash-header{display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(135deg,var(--or3),var(--or));border-radius:var(--r2);padding:24px;margin-bottom:20px;color:#fff;gap:16px}
+.dash-header-left{flex:1;min-width:0}
+.dash-header-right{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
+.dash-ring{width:90px;height:90px;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
+.dash-bilan-btn{padding:7px 14px;border:none;border-radius:8px;background:rgba(255,255,255,.2);color:#fff;font-size:.76rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s}
+.dash-bilan-btn:hover{background:rgba(255,255,255,.3)}
+.dash-mini-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.dash-mini-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:14px;cursor:pointer;transition:.2s}
+.dash-mini-card:hover{border-color:var(--brd2);transform:translateY(-1px)}
+.dash-mini-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dash-mini-icon{font-size:1.1rem;flex-shrink:0}
+.dash-mini-title{font-size:.78rem;font-weight:600;color:var(--tx2);flex:1}
+.dash-mini-badge{font-size:.8rem;font-weight:700;margin-left:auto}
+.dash-mini-bar{height:6px;background:var(--surf3);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.dash-mini-fill{height:100%;border-radius:4px;transition:width .4s}
+.dash-mini-ok{font-size:.74rem;color:var(--green);font-weight:600}
+.dash-mini-hint{font-size:.72rem;color:var(--tx3)}
+.dash-mini-water{font-size:.76rem;color:var(--tx2)}
+
+/* ══ BILAN MODAL ══ */
+.bilan-modal-inner{max-width:560px}
+.bilan-score-row{text-align:center;margin-bottom:20px}
+.bilan-big-score{font-size:3rem;font-weight:800;line-height:1}
+.bilan-big-label{font-size:.82rem;color:var(--tx3);margin-top:4px}
+.bilan-bars{display:flex;gap:6px;align-items:flex-end;height:100px;margin-bottom:20px;padding:0 4px}
+.bilan-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bilan-bar-wrap{width:100%;flex:1;display:flex;align-items:flex-end;background:var(--surf2);border-radius:4px;overflow:hidden}
+.bilan-bar-fill{width:100%;border-radius:4px;transition:height .4s}
+.bilan-bar-label{font-size:.66rem;color:var(--tx3)}
+.bilan-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.bilan-stat{background:var(--surf2);border-radius:var(--r);padding:12px 8px;text-align:center}
+.bilan-stat-val{font-size:1.3rem;font-weight:700;color:var(--or)}
+.bilan-stat-label{font-size:.65rem;color:var(--tx3);margin-top:3px}
+
+/* ══ RÉGLAGES ══ */
+.reglages-wrap{max-width:480px;margin:0 auto}
+.reglages-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.reglages-header h2{font-size:1.2rem;font-weight:700}
+.back-btn{padding:8px 14px;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);color:var(--tx2);cursor:pointer;font-size:.82rem;transition:.15s}
+.back-btn:hover{background:var(--surf3);color:var(--tx)}
+.reglages-section{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);padding:20px;margin-bottom:20px}
+.reglages-title{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);font-weight:600;margin-bottom:16px}
+.reglages-label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--tx2);margin-bottom:14px}
+.reglages-label:last-child{margin-bottom:0}
+.reglages-input{padding:10px 14px;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);color:var(--tx);font-size:.9rem;outline:none;transition:.15s}
+.reglages-input:focus{border-color:var(--or)}
+.reglages-select{padding:10px 14px;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);color:var(--tx);font-size:.9rem;outline:none;cursor:pointer}
+.reglages-save-btn{width:100%;padding:14px;border:none;border-radius:10px;background:var(--or);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;transition:.15s}
+.reglages-save-btn:hover{background:var(--or2)}
+
+/* Focus projet item (already exists but add if missing) */
+.focus-projet-item{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.focus-projet-item:hover{border-color:var(--brd2)}
+.focus-projet-color{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.focus-projet-info{flex:1;min-width:0}
+.focus-projet-name{font-size:.86rem;font-weight:500;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.focus-projet-bar{height:4px;background:var(--surf3);border-radius:2px;overflow:hidden}
+.focus-projet-fill{height:100%;border-radius:2px;transition:width .4s}
+.focus-projet-pct{font-size:.78rem;font-weight:600;color:var(--tx2);flex-shrink:0}
+
 /* ══ RESPONSIVE ══ */
 @media(max-width:768px){
   .sb{display:none}.bnav{display:block}.fab{display:flex}
@@ -523,5 +584,11 @@ button,input,textarea,select{font-family:inherit}
   .card-actions{opacity:1}
   .search-wrap{max-width:none;flex:1}
   .cal-month-cell{min-height:52px;padding:4px 5px}
+  .dash-header{flex-direction:column;gap:12px}
+  .dash-header-right{flex-direction:row;justify-content:center}
+  .dash-ring{width:70px;height:70px}
+  .dash-mini-row{grid-template-columns:1fr 1fr}
+  .bilan-stats-grid{grid-template-columns:repeat(2,1fr)}
+  .bilan-modal-inner{height:auto;max-height:90vh;border-radius:var(--r2)}
 }
 @media(max-width:400px){.ei{grid-template-columns:1fr}}
