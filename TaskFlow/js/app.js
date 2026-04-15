@@ -10,7 +10,7 @@ function daysUntil(dateStr){const[y,m,d]=dateStr.split('-').map(Number);const t=
 const PRIORITY_ORDER={critique:0,haute:1,moyenne:2,moderee:3,basse:4};
 const PRIORITY_LABELS={critique:'Critique',haute:'Haute',moyenne:'Moyenne',moderee:'Modérée',basse:'Basse'};
 const PRIORITY_DOTS={critique:5,haute:4,moyenne:3,moderee:2,basse:1};
-const CATEGORY_LABELS={travail:'Travail',personnel:'Personnel',sante:'Santé',urgent:'Urgent',apprentissage:'Apprentissage'};
+const CATEGORY_LABELS={travail:'Travail',personnel:'Personnel',sante:'Santé',urgent:'Urgent',apprentissage:'Apprentissage',autres:'Autres'};
 const NOTE_CATEGORY_LABELS={travail:'Travail',personnel:'Personnel',idees:'Idées',projets:'Projets',autre:'Autre'};
 const PROJECT_STATUS_LABELS={en_cours:'En cours',en_pause:'En pause',termine:'Terminé',abandonne:'Abandonné'};
 const PROJECT_CAT_LABELS={travail:'Travail',personnel:'Personnel',side:'Side project',autre:'Autre'};
@@ -19,7 +19,7 @@ const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MOIS=['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const MOIS_FULL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS_FULL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-const CAT_COLORS={travail:'amber',personnel:'blue',sante:'green',urgent:'red',apprentissage:'or3'};
+const CAT_COLORS={travail:'blue',personnel:'or',sante:'green',urgent:'red',apprentissage:'purple',autres:'gray'};
 const CAL_CAT_COLORS={travail:'#3B82F6',personnel:'#F97316',sante:'#22C55E',urgent:'#EF4444',apprentissage:'#A855F7'};
 function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function filt(){return tasks.filter(t=>(filterCategory==='all'||t.cat===filterCategory)&&(filterPriority==='all'||t.prio===filterPriority))}
@@ -458,6 +458,21 @@ function monthDates(off){const n=new Date(),y=n.getFullYear(),m=n.getMonth()+off
 function dayOff(d){const now=new Date();now.setHours(0,0,0,0);const t=new Date(d);t.setHours(0,0,0,0);return Math.round((t-now)/864e5)}
 function calClickDay(off){calView='day';calOff=off;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));document.getElementById('cal-btn-day')?.classList.add('act');renderCalendar()}
 const HOURS=Array.from({length:14},(_,i)=>i+7);
+/* Parse une durée texte ("30min","1h","1h30","1.5h","2h"…) → minutes */
+function parseDuration(dur){
+  if(!dur)return 60;
+  const s=dur.trim().toLowerCase();
+  // Format "Xmin" ou "Xm"
+  const m=s.match(/^(\d+(?:\.\d+)?)\s*min$/);
+  if(m)return Math.round(parseFloat(m[1]));
+  // Format "Xh" ou "XhY" ou "XhYmin"
+  const h=s.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
+  if(h)return Math.round(parseFloat(h[1])*60+(h[2]?parseInt(h[2]):0));
+  // Nombre seul → heures
+  const n=parseFloat(s);
+  if(!isNaN(n))return Math.round(n*60);
+  return 60;
+}
 function renderCalendar(){
   const isMonth=calView==='month';
   document.getElementById('cal-week-day-grid').style.display=isMonth?'none':'';
@@ -483,7 +498,7 @@ function renderCalendar(){
   document.getElementById('cal-unpl').innerHTML=unpl.map(t=>`<div class="cal-mini" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="cal-mini-t">${escapeHtml(t.title)}</div><div class="cal-mini-s">${CATEGORY_LABELS[t.cat]||''} · ${t.dur||'—'}</div></div>`).join('')||'<div style="color:var(--tx3);padding:12px;font-size:.78rem;text-align:center">Aucune</div>';
   document.getElementById('cal-hdr').innerHTML='<div class="cal-hdr-time"></div>'+dates.map(d=>`<div class="cal-hdr-day ${dateKey(d)===today?'today':''}">${JOURS[(d.getDay()+6)%7]}<span class="num">${d.getDate()}</span></div>`).join('');
   const timeCol=HOURS.map(h=>`<div class="cal-time-slot">${String(h).padStart(2,'0')}h</div>`).join('');
-  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;const bg=CAL_CAT_COLORS[t.cat]||'#6B7280';return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:46px;background:${bg};border-left-color:rgba(255,255,255,.4)" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
+  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;const bg=CAL_CAT_COLORS[t.cat]||'#6B7280';const durPx=Math.max(20,Math.round(parseDuration(t.dur)/60*48)-2);return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:${durPx}px;background:${bg};border-left-color:rgba(255,255,255,.4)" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}

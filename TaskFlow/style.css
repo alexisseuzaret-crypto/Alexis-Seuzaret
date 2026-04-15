@@ -9,6 +9,7 @@
   --yellow:#eab308;--yellowbg:rgba(234,179,8,.12);
   --amber:#d97706;--amberbg:rgba(217,119,6,.12);
   --purple:#a855f7;--purplebg:rgba(168,85,247,.12);
+  --gray:#6B7280;--graybg:rgba(107,114,128,.12);
   --r:10px;--r2:14px;--sh:0 8px 32px rgba(0,0,0,.5);
   --bnav:60px;--topbar-h:135px;
 }
@@ -93,7 +94,7 @@ button,input,textarea,select{font-family:inherit}
 .card:hover{border-color:var(--brd2);transform:translateY(-1px);box-shadow:var(--sh)}
 .card-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .badge{padding:3px 10px;border-radius:6px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.b-travail{background:var(--yellowbg);color:var(--amber)}.b-personnel{background:var(--bluebg);color:var(--blue)}.b-sante{background:var(--greenbg);color:var(--green)}.b-urgent{background:var(--redbg);color:var(--red)}.b-apprentissage{background:var(--amberbg);color:var(--or3)}
+.b-travail{background:var(--bluebg);color:var(--blue)}.b-personnel{background:var(--orGlow);color:var(--or)}.b-sante{background:var(--greenbg);color:var(--green)}.b-urgent{background:var(--redbg);color:var(--red)}.b-apprentissage{background:var(--purplebg);color:var(--purple)}.b-autres{background:var(--graybg);color:var(--gray)}
 .b-idees{background:var(--purplebg);color:var(--purple)}.b-projets{background:var(--orGlow);color:var(--or)}.b-autre{background:var(--surf3);color:var(--tx2)}
 .card-dots{margin-left:auto;display:flex;gap:3px}
 .card-dots span{width:6px;height:6px;border-radius:50%;background:var(--or)}
