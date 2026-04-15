@@ -1,5 +1,6 @@
 let filterCategory='all',filterPriority='all',calOff=0,calView='week',editingId=null;
 let activeView='focus',selectedNoteId=null,notesCatFilter='all',notesDraft=null,searchQuery='';
+let activeProjectId=null,projectsFilter='all',editingProjectId=null,editingProjectTaskId=null;
 let completionChart=null,streaksCache={};
 
 const escapeHtml=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
@@ -9,6 +10,8 @@ const PRIORITY_LABELS={critique:'Critique',haute:'Haute',moyenne:'Moyenne',moder
 const PRIORITY_DOTS={critique:5,haute:4,moyenne:3,moderee:2,basse:1};
 const CATEGORY_LABELS={travail:'Travail',personnel:'Personnel',sante:'Santé',urgent:'Urgent',apprentissage:'Apprentissage'};
 const NOTE_CATEGORY_LABELS={travail:'Travail',personnel:'Personnel',idees:'Idées',projets:'Projets',autre:'Autre'};
+const PROJECT_STATUS_LABELS={en_cours:'En cours',en_pause:'En pause',termine:'Terminé',abandonne:'Abandonné'};
+const PROJECT_CAT_LABELS={travail:'Travail',personnel:'Personnel',side:'Side project',autre:'Autre'};
 const EISENHOWER_LABELS={do:'Faire maintenant',plan:'Planifier',delegate:'Déléguer',eliminate:'Éliminer'};
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MOIS=['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
@@ -68,6 +71,8 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))docum
 function fabAction(){
   if(activeView==='habits')openHabitModal();
   else if(activeView==='notes')createNote();
+  else if(activeView==='projets'){if(activeProjectId)openProjectTaskModal();else openProjectModal();}
+
   else if(activeView==='calendar'){openModal();setTimeout(()=>{let d;if(calView==='day')d=dayDate(calOff)[0];else if(calView==='week')d=weekDates(calOff)[0];else{d=new Date();d=new Date(d.getFullYear(),d.getMonth()+calOff,1)}document.getElementById('f-due').value=dateKey(d)},50)}
   else openModal();
 }
@@ -274,10 +279,12 @@ function renderFocus(){
   const upcoming=tasks.filter(t=>t.due&&t.status!=='done'&&daysUntil(t.due)<=3).sort((a,b)=>a.due.localeCompare(b.due));
   const deadlines=upcoming.map(t=>{const dd=daysUntil(t.due);const u=dd<=1;const w=dd<=2&&!u;const cls=u?'urgent':w?'warning':'';const dc=u?'red':w?'orange':'normal';const dl=dd<0?'En retard':dd===0?"Aujourd'hui":dd===1?'Demain':dd+'j';
     return `<div class="focus-deadline ${cls}"><div class="focus-deadline-info"><div class="focus-deadline-title">${escapeHtml(t.title)}</div><div class="focus-deadline-cat"><span class="badge b-${t.cat}" style="font-size:.58rem">${CATEGORY_LABELS[t.cat]}</span></div></div><span class="focus-deadline-days ${dc}">${dl}</span></div>`}).join('')||'<div class="focus-empty">Aucune échéance dans les 3 prochains jours</div>';
+  const focusProjets=projects.filter(p=>p.status==='en_cours').slice(0,3).map(p=>{const pct=computeProgress(p.id);return`<div class="focus-projet-item" onclick="switchView('projets');openProjectDetail('${p.id}')"><div class="focus-projet-color" style="background:${p.color}"></div><div class="focus-projet-info"><div class="focus-projet-name">${escapeHtml(p.name)}</div><div class="focus-projet-bar"><div class="focus-projet-fill" style="width:${pct}%;background:${p.color}"></div></div></div><span class="focus-projet-pct">${pct}%</span></div>`}).join('')||'<div class="focus-empty">Aucun projet en cours</div>';
   document.getElementById('focus-content').innerHTML=`<div class="focus-header"><div class="focus-greeting">${greeting}</div><div class="focus-date">${dateStr}</div><div class="focus-scores"><div class="focus-score-item"><div class="focus-score-num">${tasksDoneToday}</div><div class="focus-score-label">Tâches terminées</div></div><div class="focus-score-item"><div class="focus-score-num">${habitsToday}/${habits.length}</div><div class="focus-score-label">Habitudes du jour</div></div><div class="focus-score-item"><div class="focus-score-num">${pending.length}</div><div class="focus-score-label">Restantes</div></div></div></div>
   <div class="focus-section" id="focus-top3-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusTasksDrop(event)"><div class="focus-section-title"><span>&#127919;</span> Mes 3 priorités du jour</div>${top3}</div>
   <div class="focus-section" id="focus-habits-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusHabitsDrop(event)"><div class="focus-section-title"><span>&#9989;</span> Habitudes du jour</div><div class="focus-habits-count">${habitsToday}/${habits.length} (${habitPct}%)</div><div class="focus-habits-bar"><div class="focus-habits-fill" style="width:${habitPct}%"></div></div>${habitsHTML}</div>
-  <div class="focus-section"><div class="focus-section-title"><span>&#9200;</span> Échéances proches</div>${deadlines}</div>`;
+  <div class="focus-section"><div class="focus-section-title"><span>&#9200;</span> Échéances proches</div>${deadlines}</div>
+  <div class="focus-section"><div class="focus-section-title"><span>&#128193;</span> Projets en cours</div>${focusProjets}</div>`;
 }
 async function toggleFocusHabit(id){await toggleHabitDay(id,dateKey(new Date()))}
 
@@ -520,6 +527,188 @@ function renderStats(){
   }
 }
 
+/* ═══ PROJETS ═══ */
+document.getElementById('projets-filters').addEventListener('click',e=>{const b=e.target.closest('.proj-filter');if(!b)return;projectsFilter=b.dataset.pf;document.querySelectorAll('.proj-filter').forEach(x=>x.classList.remove('act'));b.classList.add('act');renderProjects()});
+
+function computeProgress(projectId){
+  const ts=projectTasks.filter(t=>t.projectId===projectId);
+  if(!ts.length)return 0;
+  return Math.round(ts.filter(t=>t.status==='done').length/ts.length*100);
+}
+
+function renderProjects(){
+  if(activeProjectId){
+    document.getElementById('projets-list-view').style.display='none';
+    document.getElementById('projets-detail-view').style.display='';
+    renderProjectDetail();return;
+  }
+  document.getElementById('projets-list-view').style.display='';
+  document.getElementById('projets-detail-view').style.display='none';
+  const filtered=projectsFilter==='all'?projects:projects.filter(p=>p.status===projectsFilter);
+  if(!filtered.length){document.getElementById('projets-grid').innerHTML='<div class="focus-empty" style="grid-column:1/-1;padding:40px;text-align:center">Aucun projet — créez-en un !</div>';return}
+  document.getElementById('projets-grid').innerHTML=filtered.map(p=>{
+    const pct=computeProgress(p.id);
+    const taskCount=projectTasks.filter(t=>t.projectId===p.id).length;
+    const doneCount=projectTasks.filter(t=>t.projectId===p.id&&t.status==='done').length;
+    return`<div class="proj-card" onclick="openProjectDetail('${p.id}')" style="--proj-color:${p.color}">
+      <div class="proj-card-top">
+        <div class="proj-card-color" style="background:${p.color}"></div>
+        <div class="proj-card-info"><div class="proj-card-name">${escapeHtml(p.name)}</div><div class="proj-card-meta">${PROJECT_CAT_LABELS[p.cat]||p.cat} · ${PROJECT_STATUS_LABELS[p.status]||p.status}</div></div>
+        <button class="card-act-btn" onclick="event.stopPropagation();openProjectModal('${p.id}')">&#9998;</button>
+      </div>
+      ${p.deadline?`<div class="proj-card-deadline">&#128197; ${p.deadline}</div>`:''}
+      <div class="proj-progress-wrap">
+        <div class="proj-progress-bar"><div class="proj-progress-fill" style="width:${pct}%;background:${p.color}"></div></div>
+        <div class="proj-progress-label">${pct}% · ${doneCount}/${taskCount} sous-tâches</div>
+      </div>
+    </div>`
+  }).join('');
+}
+
+function openProjectDetail(id){
+  activeProjectId=id;
+  document.getElementById('projets-list-view').style.display='none';
+  document.getElementById('projets-detail-view').style.display='';
+  renderProjectDetail();
+}
+
+function backToProjects(){
+  activeProjectId=null;
+  document.getElementById('projets-list-view').style.display='';
+  document.getElementById('projets-detail-view').style.display='none';
+}
+
+function renderProjectDetail(){
+  const p=projects.find(x=>x.id===activeProjectId);if(!p)return;
+  const pct=computeProgress(p.id);
+  const ts=projectTasks.filter(t=>t.projectId===p.id).sort(byPos);
+  document.getElementById('proj-detail-name').textContent=p.name;
+  document.getElementById('proj-detail-info').innerHTML=`
+    <div class="proj-detail-card" style="border-left:4px solid ${p.color}">
+      <div class="proj-detail-top">
+        <span class="proj-detail-cat">${PROJECT_CAT_LABELS[p.cat]||p.cat}</span>
+        <span class="proj-detail-status" style="color:${p.color}">${PROJECT_STATUS_LABELS[p.status]||p.status}</span>
+      </div>
+      ${p.desc?`<div class="proj-detail-desc">${escapeHtml(p.desc)}</div>`:''}
+      <div class="proj-detail-dates">${p.startDate?`<span>Début : ${p.startDate}</span>`:''}${p.deadline?`<span>Deadline : ${p.deadline}</span>`:''}</div>
+      <div class="proj-progress-wrap" style="margin-top:12px">
+        <div class="proj-progress-bar"><div class="proj-progress-fill" style="width:${pct}%;background:${p.color}"></div></div>
+        <div class="proj-progress-label">${pct}% terminé</div>
+      </div>
+    </div>`;
+  const statusColors={todo:'var(--tx3)',doing:'var(--blue)',done:'var(--green)'};
+  const statusLabels={todo:'À faire',doing:'En cours',done:'Terminé'};
+  document.getElementById('project-tasks-list').innerHTML=ts.map(t=>{const done=t.status==='done';
+    return`<div class="proj-task-item${done?' done':''}" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">
+      <div class="proj-task-chk${done?' on':''}" onclick="toggleProjectTask('${t.id}')"></div>
+      <div class="proj-task-info">
+        <div class="proj-task-title">${escapeHtml(t.title)}</div>
+        <div class="proj-task-meta"><span style="color:${statusColors[t.status]}">${statusLabels[t.status]}</span>${t.dueDate?` · &#128197; ${t.dueDate}`:''} · ${PRIORITY_LABELS[t.priority]||t.priority}</div>
+      </div>
+      <button class="card-act-btn" onclick="openProjectTaskModal('${t.id}')">&#9998;</button>
+      <button class="card-act-btn del" onclick="delProjectTask('${t.id}')">&#10005;</button>
+    </div>`
+  }).join('')||'<div class="focus-empty">Aucune sous-tâche — ajoutez-en une !</div>';
+}
+
+async function toggleProjectTask(id){
+  const t=projectTasks.find(x=>x.id===id);if(!t)return;
+  t.status=t.status==='done'?'todo':'done';
+  renderProjectDetail();await updateProjectTaskDB(t);
+}
+
+/* Modal projet */
+function openProjectModal(id){
+  editingProjectId=id||null;
+  if(editingProjectId){
+    const p=projects.find(x=>x.id===editingProjectId);if(!p)return;
+    document.getElementById('project-modal-title').textContent='Modifier le projet';
+    document.getElementById('project-btn-submit').textContent='Enregistrer';
+    document.getElementById('fp-name').value=p.name;document.getElementById('fp-desc').value=p.desc||'';
+    document.getElementById('fp-cat').value=p.cat;document.getElementById('fp-status').value=p.status;
+    document.getElementById('fp-start').value=p.startDate||'';document.getElementById('fp-deadline').value=p.deadline||'';
+    document.getElementById('fp-color').value=p.color||'#6366f1';
+  } else {
+    document.getElementById('project-modal-title').textContent='Nouveau projet';
+    document.getElementById('project-btn-submit').textContent='Créer le projet';
+    ['fp-name','fp-desc'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('fp-cat').value='autre';document.getElementById('fp-status').value='en_cours';
+    document.getElementById('fp-start').value='';document.getElementById('fp-deadline').value='';
+    document.getElementById('fp-color').value='#6366f1';
+  }
+  document.getElementById('project-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('fp-name').focus(),50);
+}
+function closeProjectModal(){document.getElementById('project-modal').classList.remove('open');editingProjectId=null}
+
+async function saveProject(){
+  const name=document.getElementById('fp-name').value.trim();if(!name){toast('Nom requis !');return}
+  const fields={name,desc:document.getElementById('fp-desc').value.trim(),cat:document.getElementById('fp-cat').value,status:document.getElementById('fp-status').value,startDate:document.getElementById('fp-start').value||null,deadline:document.getElementById('fp-deadline').value||null,color:document.getElementById('fp-color').value};
+  if(editingProjectId){
+    const p=projects.find(x=>x.id===editingProjectId);if(p){Object.assign(p,fields);renderAll();await updateProjectDB(p);toast('Projet modifié ✓')}
+  } else {
+    const p={id:null,...fields,createdAt:null};
+    const r=await insertProject(p);if(r){projects.unshift(r);renderAll();toast('Projet créé ✓')}
+  }
+  closeProjectModal();
+}
+
+async function deleteCurrentProject(){
+  const ok=await showConfirm('Supprimer ce projet et toutes ses sous-tâches ?');if(!ok)return;
+  await deleteProjectDB(activeProjectId);
+  projects=projects.filter(p=>p.id!==activeProjectId);
+  projectTasks=projectTasks.filter(t=>t.projectId!==activeProjectId);
+  backToProjects();renderAll();toast('Projet supprimé');
+}
+
+/* Modal sous-tâche */
+function openProjectTaskModal(id){
+  editingProjectTaskId=id||null;
+  if(editingProjectTaskId){
+    const t=projectTasks.find(x=>x.id===editingProjectTaskId);if(!t)return;
+    document.getElementById('project-task-modal-title').textContent='Modifier la sous-tâche';
+    document.getElementById('project-task-btn-submit').textContent='Enregistrer';
+    document.getElementById('fpt-title').value=t.title;document.getElementById('fpt-status').value=t.status;
+    document.getElementById('fpt-prio').value=t.priority;document.getElementById('fpt-due').value=t.dueDate||'';
+  } else {
+    document.getElementById('project-task-modal-title').textContent='Nouvelle sous-tâche';
+    document.getElementById('project-task-btn-submit').textContent='Créer la sous-tâche';
+    document.getElementById('fpt-title').value='';document.getElementById('fpt-status').value='todo';
+    document.getElementById('fpt-prio').value='moyenne';document.getElementById('fpt-due').value='';
+  }
+  document.getElementById('project-task-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('fpt-title').focus(),50);
+}
+function closeProjectTaskModal(){document.getElementById('project-task-modal').classList.remove('open');editingProjectTaskId=null}
+
+async function saveProjectTask(){
+  const title=document.getElementById('fpt-title').value.trim();if(!title){toast('Titre requis !');return}
+  const fields={title,status:document.getElementById('fpt-status').value,priority:document.getElementById('fpt-prio').value,dueDate:document.getElementById('fpt-due').value||null};
+  if(editingProjectTaskId){
+    const t=projectTasks.find(x=>x.id===editingProjectTaskId);if(t){Object.assign(t,fields);renderProjectDetail();await updateProjectTaskDB(t);toast('Sous-tâche modifiée ✓')}
+  } else {
+    const t={id:null,projectId:activeProjectId,...fields,position:null};
+    const r=await insertProjectTask(t);if(r){projectTasks.push(r);renderProjectDetail();toast('Sous-tâche créée ✓')}
+  }
+  closeProjectTaskModal();
+}
+
+async function delProjectTask(id){
+  const ok=await showConfirm('Supprimer cette sous-tâche ?');if(!ok)return;
+  await deleteProjectTaskDB(id);projectTasks=projectTasks.filter(t=>t.id!==id);
+  renderProjectDetail();toast('Sous-tâche supprimée');
+}
+
+async function projectTasksDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
+  if(!dragId)return;
+  const t=projectTasks.find(x=>x.id===dragId);const oe=dragOverEl,ob=dragOverBefore;
+  dragId=null;dragOverEl=null;if(!t)return;
+  const pTasks=projectTasks.filter(x=>x.projectId===activeProjectId).sort(byPos);
+  const updated=reorder(pTasks,t,oe,ob);
+  renderProjectDetail();await updateProjectTaskPositions(updated);
+}
+
 /* ═══ RENDER ALL ═══ */
 const VIEW_RENDERERS={
   focus:renderFocus,
@@ -528,6 +717,7 @@ const VIEW_RENDERERS={
   eisenhower:renderEisenhower,
   notes:renderNotes,
   habits:renderHabits,
+  projets:renderProjects,
   stats:renderStats
 };
 function renderAll(){
@@ -591,7 +781,7 @@ function onTM(e){
   if(touchGhost){touchGhost.style.left=(t.clientX-60)+'px';touchGhost.style.top=(t.clientY-30)+'px';}
   clearDragUI();document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));
   const u=document.elementFromPoint(t.clientX,t.clientY);if(!u)return;
-  const zone=u.closest('[data-st]')||u.closest('[data-eq]')||u.closest('[data-day]')||u.closest('.cal-side')||u.closest('.notes-list')||u.closest('.habits-grid')||u.closest('#focus-top3-section')||u.closest('#focus-habits-section');
+  const zone=u.closest('[data-st]')||u.closest('[data-eq]')||u.closest('[data-day]')||u.closest('.cal-side')||u.closest('.notes-list')||u.closest('.habits-grid')||u.closest('#focus-top3-section')||u.closest('#focus-habits-section')||u.closest('.project-tasks-list');
   if(zone)zone.classList.add('dragover');
   const item=u.closest('[data-id]');
   if(item&&item.dataset.id!==touchDragId){
@@ -642,6 +832,10 @@ async function onTE(e){
   const fT=u.closest('#focus-top3-section');if(fT){const t=tasks.find(x=>x.id===id);if(!t)return;
     const els=[...fT.querySelectorAll('[data-id]')];const items=els.map(el=>tasks.find(x=>x.id===el.dataset.id)).filter(Boolean);
     renderAll();await updateTaskPositions(reorder(items,t,oe,ob));return;}
+  /* Sous-tâches projet */
+  const pTL=u.closest('.project-tasks-list');if(pTL){const t=projectTasks.find(x=>x.id===id);if(!t)return;
+    const pTasks=projectTasks.filter(x=>x.projectId===activeProjectId).sort(byPos);
+    renderProjectDetail();await updateProjectTaskPositions(reorder(pTasks,t,oe,ob));return;}
 }
 
 /* ═══ INIT ═══ */
@@ -652,7 +846,7 @@ if(isMobile){calView='day'}
 initTouchDrag();
 
 (async function(){
-  await Promise.all([loadTasks(),loadHabits(),loadNotes()]);
+  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks()]);
   document.getElementById('loading-screen').classList.add('hidden');
   renderAll();
   if(isMobile){calMode('day')}
@@ -660,5 +854,5 @@ initTouchDrag();
   setTimeout(checkDeadlines,2000);
   setInterval(checkDeadlines,36e5);
 })();
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeHabitModal();cancelConfirm();closeMore()}if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!document.querySelector('.modal-bg.open'))fabAction()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeHabitModal();cancelConfirm();closeMore();closeProjectModal();closeProjectTaskModal()}if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!document.querySelector('.modal-bg.open'))fabAction()});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(console.error)}

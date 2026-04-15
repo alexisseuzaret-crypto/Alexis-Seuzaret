@@ -62,6 +62,7 @@
       <button data-v="eisenhower">Eisenhower</button>
       <button data-v="notes">Notes</button>
       <button data-v="habits">Habitudes</button>
+      <button data-v="projets">Projets</button>
       <button data-v="stats">Stats</button>
     </div>
     <button class="btn-new" onclick="fabAction()">+ Nouveau</button>
@@ -102,6 +103,38 @@
       </div>
     </div></div>
     <div id="v-habits" class="vw"><div id="habits-content"></div></div>
+    <div id="v-projets" class="vw">
+      <div id="projets-list-view">
+        <div class="projets-toolbar">
+          <div class="projets-filters" id="projets-filters">
+            <button class="proj-filter act" data-pf="all">Tous</button>
+            <button class="proj-filter" data-pf="en_cours">En cours</button>
+            <button class="proj-filter" data-pf="en_pause">En pause</button>
+            <button class="proj-filter" data-pf="termine">Terminés</button>
+          </div>
+          <button class="proj-new-btn" onclick="openProjectModal()">+ Nouveau projet</button>
+        </div>
+        <div class="projets-grid" id="projets-grid"></div>
+      </div>
+      <div id="projets-detail-view" style="display:none">
+        <div class="proj-detail-header">
+          <button class="proj-back-btn" onclick="backToProjects()">&#8592; Retour</button>
+          <div id="proj-detail-name"></div>
+          <div style="display:flex;gap:8px">
+            <button class="proj-edit-btn" onclick="openProjectModal(activeProjectId)">&#9998; Modifier</button>
+            <button class="proj-edit-btn proj-del-btn" onclick="deleteCurrentProject()">&#10005; Supprimer</button>
+          </div>
+        </div>
+        <div id="proj-detail-info"></div>
+        <div class="proj-tasks-section">
+          <div class="proj-tasks-header">
+            <span class="proj-tasks-title">Sous-tâches</span>
+            <button class="proj-add-task-btn" onclick="openProjectTaskModal()">+ Ajouter</button>
+          </div>
+          <div class="project-tasks-list" id="project-tasks-list" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="projectTasksDrop(event)"></div>
+        </div>
+      </div>
+    </div>
     <div id="v-stats" class="vw"><div id="stats-content"></div></div>
   </div>
 </div>
@@ -117,6 +150,7 @@
 <div class="more-overlay" id="more-overlay" onclick="closeMore()">
   <div class="more-panel" onclick="event.stopPropagation()">
     <button class="more-item" onclick="switchView('habits');closeMore()">&#9989; Habitudes</button>
+    <button class="more-item" onclick="switchView('projets');closeMore()">&#128193; Projets</button>
     <button class="more-item" onclick="switchView('stats');closeMore()">&#128200; Stats</button>
   </div>
 </div>
@@ -138,6 +172,35 @@
   <button class="btn-submit" id="btn-submit" onclick="saveTask()">Créer la tâche</button>
 </div></div>
 
+<!-- PROJECT MODAL -->
+<div class="modal-bg" id="project-modal" onclick="if(event.target===this)closeProjectModal()"><div class="modal">
+  <div class="modal-hd"><span id="project-modal-title">Nouveau projet</span><button onclick="closeProjectModal()">&#10005;</button></div>
+  <div class="fg"><label>Nom du projet</label><input id="fp-name" placeholder="Ex : Refonte site web…"></div>
+  <div class="fg"><label>Description</label><textarea id="fp-desc" placeholder="Description optionnelle…"></textarea></div>
+  <div class="fr">
+    <div class="fg"><label>Catégorie</label><select id="fp-cat"><option value="travail">Travail</option><option value="personnel">Personnel</option><option value="side">Side project</option><option value="autre" selected>Autre</option></select></div>
+    <div class="fg"><label>Statut</label><select id="fp-status"><option value="en_cours">En cours</option><option value="en_pause">En pause</option><option value="termine">Terminé</option><option value="abandonne">Abandonné</option></select></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>Date de début</label><input id="fp-start" type="date"></div>
+    <div class="fg"><label>Deadline</label><input id="fp-deadline" type="date"></div>
+  </div>
+  <div class="fg"><label>Couleur</label><input id="fp-color" type="color" value="#6366f1" style="height:40px;width:100%;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);padding:4px;cursor:pointer"></div>
+  <button class="btn-submit" id="project-btn-submit" onclick="saveProject()">Créer le projet</button>
+</div></div>
+
+<!-- PROJECT TASK MODAL -->
+<div class="modal-bg" id="project-task-modal" onclick="if(event.target===this)closeProjectTaskModal()"><div class="modal">
+  <div class="modal-hd"><span id="project-task-modal-title">Nouvelle sous-tâche</span><button onclick="closeProjectTaskModal()">&#10005;</button></div>
+  <div class="fg"><label>Titre</label><input id="fpt-title" placeholder="Ex : Créer la maquette…"></div>
+  <div class="fr">
+    <div class="fg"><label>Statut</label><select id="fpt-status"><option value="todo">À faire</option><option value="doing">En cours</option><option value="done">Terminé</option></select></div>
+    <div class="fg"><label>Priorité</label><select id="fpt-prio"><option value="critique">Critique</option><option value="haute">Haute</option><option value="moyenne" selected>Moyenne</option><option value="moderee">Modérée</option><option value="basse">Basse</option></select></div>
+  </div>
+  <div class="fg"><label>Échéance (optionnelle)</label><input id="fpt-due" type="date"></div>
+  <button class="btn-submit" id="project-task-btn-submit" onclick="saveProjectTask()">Créer la sous-tâche</button>
+</div></div>
+
 <!-- HABIT MODAL -->
 <div class="modal-bg" id="habit-modal" onclick="if(event.target===this)closeHabitModal()"><div class="modal">
   <div class="modal-hd"><span>Nouvelle habitude</span><button onclick="closeHabitModal()">&#10005;</button></div>
@@ -152,7 +215,7 @@
 </div></div>
 <div class="toast-box" id="toasts"></div>
 
-<script src="js/db.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
+<script src="js/db.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
 </body>
 </html>

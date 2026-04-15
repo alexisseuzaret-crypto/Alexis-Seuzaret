@@ -4,7 +4,7 @@ const SUPABASE_KEY='sb_publishable_NlPe78o7ymxyj0O6mp9e0g_6iXQjBQ_';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ═══ DONNEES GLOBALES ═══ */
-let tasks=[],habits=[],notes=[];
+let tasks=[],habits=[],notes=[],projects=[],projectTasks=[];
 
 /* ═══ MAPPING DB <-> APP ═══ */
 function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
@@ -140,6 +140,61 @@ async function updateHabitPositions(list){
   if(!list.length)return;
   console.warn('[DB] updateHabitPositions →',list.length,'habitudes');
   await Promise.all(list.map(h=>sb.from('habits').update({position:h.position}).eq('id',h.id)));
+}
+
+/* ═══ CRUD PROJETS ═══ */
+function rowToProject(r){return{id:String(r.id),name:r.name||'',desc:r.description||'',cat:r.category||'autre',startDate:r.start_date||null,deadline:r.deadline||null,status:r.status||'en_cours',color:r.color||'#6366f1',createdAt:r.created_at}}
+function projectToRow(p){return{name:p.name,description:p.desc||'',category:p.cat||'autre',start_date:p.startDate||null,deadline:p.deadline||null,status:p.status||'en_cours',color:p.color||'#6366f1'}}
+function rowToPTask(r){return{id:String(r.id),projectId:String(r.project_id),title:r.title||'',status:r.status||'todo',priority:r.priority||'moyenne',dueDate:r.due_date||null,position:r.position??null}}
+function ptaskToRow(t){return{project_id:Number(t.projectId),title:t.title,status:t.status||'todo',priority:t.priority||'moyenne',due_date:t.dueDate||null,position:t.position??null}}
+
+async function loadProjects(){
+  const{data,error}=await sb.from('projects').select('*').order('created_at',{ascending:false});
+  if(error){console.error('[DB] loadProjects ERREUR:',error);toast('Erreur chargement projets');return}
+  projects=(data||[]).map(rowToProject)
+}
+async function loadProjectTasks(){
+  const{data,error}=await sb.from('project_tasks').select('*').order('position',{ascending:true,nullsFirst:false});
+  if(error){console.error('[DB] loadProjectTasks ERREUR:',error);toast('Erreur chargement sous-tâches');return}
+  projectTasks=(data||[]).map(rowToPTask)
+}
+async function insertProject(p){
+  const row=projectToRow(p);
+  const{data,error}=await sb.from('projects').insert(row).select();
+  if(error){console.error('[DB] insertProject ERREUR:',error);toast('Erreur création projet — '+error.message);return null}
+  if(data&&data[0])p.id=String(data[0].id);
+  return p
+}
+async function updateProjectDB(p){
+  const row=projectToRow(p);
+  const{data,error}=await sb.from('projects').update(row).eq('id',p.id).select();
+  if(error){console.error('[DB] updateProject ERREUR:',error);toast('Erreur mise à jour projet — '+error.message);return}
+  if(!data?.length)toast('⚠️ Projet non sauvegardé');
+}
+async function deleteProjectDB(id){
+  const{data,error}=await sb.from('projects').delete().eq('id',id).select();
+  if(error){console.error('[DB] deleteProject ERREUR:',error);toast('Erreur suppression projet — '+error.message);return}
+}
+async function insertProjectTask(t){
+  const row=ptaskToRow(t);
+  const{data,error}=await sb.from('project_tasks').insert(row).select();
+  if(error){console.error('[DB] insertProjectTask ERREUR:',error);toast('Erreur création sous-tâche — '+error.message);return null}
+  if(data&&data[0])t.id=String(data[0].id);
+  return t
+}
+async function updateProjectTaskDB(t){
+  const row=ptaskToRow(t);
+  const{data,error}=await sb.from('project_tasks').update(row).eq('id',t.id).select();
+  if(error){console.error('[DB] updateProjectTask ERREUR:',error);toast('Erreur mise à jour sous-tâche — '+error.message);return}
+  if(!data?.length)toast('⚠️ Sous-tâche non sauvegardée');
+}
+async function deleteProjectTaskDB(id){
+  const{data,error}=await sb.from('project_tasks').delete().eq('id',id).select();
+  if(error){console.error('[DB] deleteProjectTask ERREUR:',error);toast('Erreur suppression sous-tâche — '+error.message);return}
+}
+async function updateProjectTaskPositions(list){
+  if(!list.length)return;
+  await Promise.all(list.map(t=>sb.from('project_tasks').update({position:t.position}).eq('id',t.id)));
 }
 
 async function deleteNoteDB(id){
