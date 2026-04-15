@@ -73,6 +73,7 @@ function fabAction(){
   else if(activeView==='notes')createNote();
   else if(activeView==='projets'){if(activeProjectId)openProjectTaskModal();else openProjectModal();}
   else if(activeView==='sport')return;
+  else if(activeView==='alimentation')return;
 
   else if(activeView==='calendar'){openModal();setTimeout(()=>{let d;if(calView==='day')d=dayDate(calOff)[0];else if(calView==='week')d=weekDates(calOff)[0];else{d=new Date();d=new Date(d.getFullYear(),d.getMonth()+calOff,1)}document.getElementById('f-due').value=dateKey(d)},50)}
   else openModal();
@@ -891,6 +892,163 @@ async function delSwim(id){
   await deleteSwimDB(id);swimmingLog=swimmingLog.filter(s=>s.id!==id);renderSport();
 }
 
+/* ═══ ALIMENTATION ═══ */
+let alimMoment='dejeuner',selectedFoodItem=null,alimCaloricGoal=1800;
+const ALIM_MOMENTS={petit_dej:'Petit-déjeuner',dejeuner:'Déjeuner',diner:'Dîner',snacks:'Snacks'};
+
+function setAlimMoment(m){
+  alimMoment=m;
+  document.querySelectorAll('.alim-moment-btn').forEach(b=>b.classList.toggle('act',b.dataset.m===m));
+}
+
+function onFoodSearch(val){
+  const q=val.toLowerCase().trim();
+  const el=document.getElementById('food-suggestions');if(!el)return;
+  if(!q||q.length<2){el.style.display='none';return}
+  const matches=FOOD_DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){el.style.display='none';return}
+  el.innerHTML=matches.map(f=>`<div class="food-sugg-item" onclick="selectFood(${JSON.stringify(f.n)})">${escapeHtml(f.n)}<span>${f.k} cal/100g</span></div>`).join('');
+  el.style.display='block';
+}
+
+function selectFood(name){
+  selectedFoodItem=FOOD_DB.find(f=>f.n===name)||null;
+  const si=document.getElementById('food-search');if(si)si.value=name;
+  const el=document.getElementById('food-suggestions');if(el)el.style.display='none';
+  const qi=document.getElementById('food-quantity');if(qi)qi.focus();
+  updateMealCalcPreview();
+}
+
+function updateMealCalcPreview(){
+  const qty=parseFloat(document.getElementById('food-quantity')?.value||0);
+  const el=document.getElementById('meal-calc-preview');if(!el)return;
+  if(selectedFoodItem&&qty>0){
+    const cal=Math.round(selectedFoodItem.k*qty/100);
+    const p=Math.round(selectedFoodItem.p*qty/100*10)/10;
+    const g=Math.round(selectedFoodItem.g*qty/100*10)/10;
+    const l=Math.round(selectedFoodItem.l*qty/100*10)/10;
+    el.textContent=`${cal} cal · ${p}g prot · ${g}g gluc · ${l}g lip`;
+  } else el.textContent='';
+}
+
+function renderAlimentation(){
+  const todayKey=dateKey(new Date());
+  const todayMeals=mealsLog.filter(m=>m.date===todayKey);
+  const todayCal=Math.round(todayMeals.reduce((s,m)=>s+m.calories,0));
+  const todayProt=Math.round(todayMeals.reduce((s,m)=>s+(m.proteines||0),0)*10)/10;
+  const todayGluc=Math.round(todayMeals.reduce((s,m)=>s+(m.glucides||0),0)*10)/10;
+  const todayLip=Math.round(todayMeals.reduce((s,m)=>s+(m.lipides||0),0)*10)/10;
+  const pct=Math.min(Math.round(todayCal/alimCaloricGoal*100),120);
+  const barPct=Math.min(pct,100);
+  const barColor=todayCal<alimCaloricGoal*0.9?'var(--green)':todayCal<=alimCaloricGoal*1.1?'var(--or)':'var(--red)';
+  const message=todayCal<alimCaloricGoal*0.9?'&#9989; Bon travail, tu es dans ton déficit calorique !':todayCal<=alimCaloricGoal*1.1?'&#9889; Tu approches de ton objectif journalier':'&#9888;&#65039; Tu as dépassé ton objectif aujourd\'hui';
+  /* Eau */
+  const todayWater=waterLog.find(w=>w.date===todayKey);
+  const glasses=todayWater?.glasses||0;
+  const waterPct=Math.min(glasses/8*100,100);
+  /* Section résumé */
+  const summaryHTML=`<div class="alim-summary-card">
+    <div class="alim-summary-title">Bilan du jour</div>
+    <div class="alim-cal-row">
+      <span class="alim-cal-num" style="color:${barColor}">${todayCal}</span>
+      <span class="alim-cal-sep">/</span>
+      <span class="alim-cal-goal">${alimCaloricGoal} cal</span>
+      <span class="alim-cal-pct" style="color:${barColor}">${pct}%</span>
+    </div>
+    <div class="alim-bar-bg"><div class="alim-bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
+    <div class="alim-macros">
+      <div class="alim-macro"><span class="alim-macro-val">${todayProt}g</span><span class="alim-macro-lbl">Protéines</span></div>
+      <div class="alim-macro"><span class="alim-macro-val">${todayGluc}g</span><span class="alim-macro-lbl">Glucides</span></div>
+      <div class="alim-macro"><span class="alim-macro-val">${todayLip}g</span><span class="alim-macro-lbl">Lipides</span></div>
+    </div>
+    <div class="alim-message" style="color:${barColor}">${message}</div>
+    <div class="alim-water-row">
+      <div class="alim-water-info">
+        <span class="alim-water-icon">&#128167;</span>
+        <span class="alim-water-count">${glasses}/8 verres</span>
+        <div class="alim-water-bar-bg"><div class="alim-water-bar-fill" style="width:${waterPct}%"></div></div>
+      </div>
+      <button class="alim-water-btn" onclick="addWater()">+ 1 verre</button>
+    </div>
+  </div>`;
+  /* Formulaire ajout */
+  const formHTML=`<div class="alim-add-card">
+    <div class="alim-summary-title">Ajouter un aliment</div>
+    <div class="alim-moments">
+      ${Object.entries(ALIM_MOMENTS).map(([k,v])=>`<button class="alim-moment-btn${alimMoment===k?' act':''}" data-m="${k}" onclick="setAlimMoment('${k}')">${v}</button>`).join('')}
+    </div>
+    <div class="alim-search-wrap">
+      <input id="food-search" class="alim-search-input" placeholder="&#128269; Rechercher un aliment..." oninput="onFoodSearch(this.value)" autocomplete="off">
+      <div id="food-suggestions" class="food-suggestions" style="display:none"></div>
+    </div>
+    <div class="alim-qty-row">
+      <div class="sport-fg"><label>Quantité (grammes)</label><input id="food-quantity" type="number" min="1" placeholder="100" oninput="updateMealCalcPreview()"></div>
+    </div>
+    <div id="meal-calc-preview" class="meal-calc-preview"></div>
+    <button class="sport-save-btn" onclick="addMealItem()">+ Ajouter au repas</button>
+  </div>`;
+  /* Repas du jour groupés par moment */
+  const mealsHTML=Object.entries(ALIM_MOMENTS).map(([mk,ml])=>{
+    const items=todayMeals.filter(m=>m.moment===mk);
+    if(!items.length)return'';
+    const momentCal=items.reduce((s,m)=>s+m.calories,0);
+    return`<div class="alim-moment-group">
+      <div class="alim-moment-header"><span>${ml}</span><span class="alim-moment-cal">${momentCal} cal</span></div>
+      ${items.map(m=>`<div class="alim-meal-item">
+        <span class="alim-meal-desc">${escapeHtml(m.description)}</span>
+        <span class="alim-meal-cal">${m.calories} cal</span>
+        <button class="card-act-btn del" onclick="delMeal('${m.id}')">&#10005;</button>
+      </div>`).join('')}
+    </div>`
+  }).join('')||'<div class="focus-empty" style="padding:20px">Aucun aliment enregistré aujourd\'hui</div>';
+  const mealsCardHTML=`<div class="alim-meals-card"><div class="alim-summary-title">Repas d\'aujourd\'hui</div>${mealsHTML}</div>`;
+  /* Graphique semaine */
+  const weekData=[],weekLabels=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);d.setHours(0,0,0,0);const k=dateKey(d);weekData.push(mealsLog.filter(m=>m.date===k).reduce((s,m)=>s+m.calories,0));weekLabels.push(JOURS[(d.getDay()+6)%7])}
+  const chartHTML=`<div class="alim-chart-card"><div class="alim-summary-title">Calories — 7 derniers jours</div><div class="alim-chart-wrap"><canvas id="alim-week-chart"></canvas></div></div>`;
+  document.getElementById('alim-content').innerHTML=`<div class="alim-grid">${summaryHTML}${formHTML}${mealsCardHTML}${chartHTML}</div>`;
+  /* Graphique */
+  const ctx=document.getElementById('alim-week-chart');
+  if(ctx){
+    const isDark=theme==='dark';
+    new Chart(ctx,{type:'bar',data:{labels:weekLabels,datasets:[{data:weekData,backgroundColor:weekData.map(v=>v>alimCaloricGoal*1.1?'rgba(239,68,68,.7)':v>alimCaloricGoal*0.9?'rgba(249,115,22,.7)':'rgba(34,197,94,.7)'),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:isDark?'#666':'#a8a29e',font:{size:11}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:isDark?'#666':'#a8a29e',font:{size:10}},grid:{color:isDark?'#2a2a2a':'#e5e5e5'}}}}});
+  }
+  /* Fermer suggestions au clic extérieur */
+  setTimeout(()=>{document.addEventListener('click',function closeSugg(e){if(!e.target.closest('.alim-search-wrap')){const el=document.getElementById('food-suggestions');if(el)el.style.display='none';document.removeEventListener('click',closeSugg)}})},100);
+}
+
+async function addMealItem(){
+  if(!selectedFoodItem){toast('Sélectionnez un aliment dans la liste');return}
+  const qty=parseFloat(document.getElementById('food-quantity')?.value||0);
+  if(!qty||qty<=0){toast('Quantité requise');return}
+  const cal=Math.round(selectedFoodItem.k*qty/100);
+  const prot=Math.round(selectedFoodItem.p*qty/100*10)/10;
+  const gluc=Math.round(selectedFoodItem.g*qty/100*10)/10;
+  const lip=Math.round(selectedFoodItem.l*qty/100*10)/10;
+  const desc=`${selectedFoodItem.n} — ${qty}g`;
+  const meal={id:null,date:dateKey(new Date()),moment:alimMoment,description:desc,calories:cal,proteines:prot,glucides:gluc,lipides:lip};
+  const result=await insertMeal(meal);
+  if(result){mealsLog.unshift(result);selectedFoodItem=null;renderAlimentation();toast(`Ajouté : ${cal} cal`)}
+}
+
+async function delMeal(id){
+  const ok=await showConfirm('Supprimer cet aliment ?');if(!ok)return;
+  await deleteMealDB(id);mealsLog=mealsLog.filter(m=>m.id!==id);renderAlimentation();
+}
+
+async function addWater(){
+  const todayKey=dateKey(new Date());
+  const existing=waterLog.find(w=>w.date===todayKey);
+  const newGlasses=(existing?.glasses||0)+1;
+  const result=await upsertWater(todayKey,newGlasses);
+  if(result){
+    if(existing)existing.glasses=newGlasses;
+    else waterLog.unshift({id:String(result.id),date:todayKey,glasses:newGlasses});
+    renderAlimentation();
+    if(newGlasses===8)toast('&#128167; Objectif eau atteint ! 8/8 verres &#127881;');
+  }
+}
+
 /* ═══ RENDER ALL ═══ */
 const VIEW_RENDERERS={
   focus:renderFocus,
@@ -901,6 +1059,7 @@ const VIEW_RENDERERS={
   habits:renderHabits,
   projets:renderProjects,
   sport:renderSport,
+  alimentation:renderAlimentation,
   stats:renderStats
 };
 function renderAll(){
@@ -1029,7 +1188,7 @@ if(isMobile){calView='day'}
 initTouchDrag();
 
 (async function(){
-  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks(),loadPushupLog(),loadRunningLog(),loadSwimmingLog()]);
+  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks(),loadPushupLog(),loadRunningLog(),loadSwimmingLog(),loadMeals(),loadWaterLog()]);
   document.getElementById('loading-screen').classList.add('hidden');
   renderAll();
   if(isMobile){calMode('day')}

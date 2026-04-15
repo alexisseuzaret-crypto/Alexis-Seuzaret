@@ -437,6 +437,55 @@ button,input,textarea,select{font-family:inherit}
 .sport-history-data{flex:1;color:var(--tx2)}
 .sport-chart-wrap{height:130px}
 
+/* ══ ALIMENTATION ══ */
+.alim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+.alim-summary-card,.alim-add-card,.alim-meals-card,.alim-chart-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);padding:20px}
+.alim-summary-title{font-size:.88rem;font-weight:700;color:var(--tx);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
+/* Bilan */
+.alim-cal-row{display:flex;align-items:baseline;gap:6px;margin-bottom:10px}
+.alim-cal-num{font-size:2.4rem;font-weight:900;line-height:1}
+.alim-cal-sep{font-size:1.2rem;color:var(--tx3)}
+.alim-cal-goal{font-size:1rem;color:var(--tx3)}
+.alim-cal-pct{margin-left:auto;font-size:.9rem;font-weight:700}
+.alim-bar-bg{height:8px;background:var(--surf3);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.alim-bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.alim-macros{display:flex;gap:8px;margin-bottom:14px}
+.alim-macro{flex:1;background:var(--surf2);border-radius:8px;padding:10px 8px;text-align:center}
+.alim-macro-val{display:block;font-size:1rem;font-weight:700;color:var(--tx)}
+.alim-macro-lbl{display:block;font-size:.65rem;color:var(--tx3);margin-top:2px}
+.alim-message{font-size:.82rem;margin-bottom:16px;font-weight:500;padding:10px 12px;background:var(--surf2);border-radius:8px}
+.alim-water-row{display:flex;align-items:center;gap:12px}
+.alim-water-info{flex:1}
+.alim-water-icon{font-size:1.1rem}
+.alim-water-count{font-size:.86rem;font-weight:600;color:var(--blue);margin-left:6px}
+.alim-water-bar-bg{height:5px;background:var(--surf3);border-radius:3px;overflow:hidden;margin-top:6px}
+.alim-water-bar-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s}
+.alim-water-btn{padding:8px 14px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;min-height:36px;flex-shrink:0}
+.alim-water-btn:hover{opacity:.85}
+/* Formulaire ajout */
+.alim-moments{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.alim-moment-btn{padding:6px 12px;border:1px solid var(--brd);border-radius:8px;background:transparent;color:var(--tx2);font-size:.78rem;cursor:pointer;transition:.15s;min-height:32px}
+.alim-moment-btn:hover{background:var(--surf2)}.alim-moment-btn.act{background:var(--or);border-color:var(--or);color:#fff;font-weight:600}
+.alim-search-wrap{position:relative;margin-bottom:10px}
+.alim-search-input{width:100%;padding:10px 14px;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);color:var(--tx);font-size:.86rem;outline:none;transition:.15s}
+.alim-search-input:focus{border-color:var(--or)}
+.food-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--brd2);border-radius:8px;z-index:100;box-shadow:var(--sh);max-height:220px;overflow-y:auto;margin-top:2px}
+.food-sugg-item{padding:10px 14px;cursor:pointer;font-size:.84rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--brd)}
+.food-sugg-item:last-child{border-bottom:none}
+.food-sugg-item:hover{background:var(--orGlow);color:var(--or)}
+.food-sugg-item span{font-size:.72rem;color:var(--tx3)}
+.alim-qty-row{margin-bottom:8px}
+.meal-calc-preview{font-size:.86rem;color:var(--or);font-weight:600;min-height:22px;margin-bottom:10px;padding:0 2px}
+/* Repas */
+.alim-moment-group{margin-bottom:16px}
+.alim-moment-header{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;font-weight:600;color:var(--tx2);padding:6px 0;border-bottom:1px solid var(--brd);margin-bottom:6px}
+.alim-moment-cal{color:var(--or);font-weight:700}
+.alim-meal-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surf2);border-radius:6px;font-size:.8rem;margin-bottom:4px}
+.alim-meal-desc{flex:1;color:var(--tx2)}
+.alim-meal-cal{color:var(--tx);font-weight:600;flex-shrink:0}
+/* Graphique */
+.alim-chart-wrap{height:140px}
+
 /* ══ RESPONSIVE ══ */
 @media(max-width:768px){
   .sb{display:none}.bnav{display:block}.fab{display:flex}
@@ -460,6 +509,8 @@ button,input,textarea,select{font-family:inherit}
   .notes-back{display:block}
   .habits-grid{grid-template-columns:1fr}
   .stats-grid{grid-template-columns:1fr}
+  .alim-grid{grid-template-columns:1fr}
+  .alim-macros{gap:6px}
   .sport-grid{grid-template-columns:1fr}
   .sport-form-row{flex-direction:column}
   .pushup-number{font-size:3.5rem}

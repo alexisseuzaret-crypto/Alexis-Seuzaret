@@ -1,5 +1,5 @@
-const CACHE='taskflow-v6';
-const SHELL=['/','/index.html','/style.css','/js/db.js','/js/app.js','/icon-192.svg','/icon-512.svg','/manifest.json'];
+const CACHE='taskflow-v7';
+const SHELL=['/','/index.html','/style.css','/js/db.js','/js/app.js','/js/food-db.js','/icon-192.svg','/icon-512.svg','/manifest.json'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));

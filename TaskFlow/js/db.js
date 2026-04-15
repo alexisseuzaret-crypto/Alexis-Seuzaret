@@ -4,7 +4,7 @@ const SUPABASE_KEY='sb_publishable_NlPe78o7ymxyj0O6mp9e0g_6iXQjBQ_';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ═══ DONNEES GLOBALES ═══ */
-let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[];
+let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[],mealsLog=[],waterLog=[];
 
 /* ═══ MAPPING DB <-> APP ═══ */
 function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
@@ -239,6 +239,35 @@ async function insertSwim(s){
 async function deleteSwimDB(id){
   const{error}=await sb.from('swimming_log').delete().eq('id',id);
   if(error)console.error('[DB] deleteSwim ERREUR:',error)
+}
+
+/* ═══ CRUD ALIMENTATION ═══ */
+function rowToMeal(r){return{id:String(r.id),date:r.date,moment:r.moment,description:r.description,calories:r.calories,proteines:parseFloat(r.proteines)||0,glucides:parseFloat(r.glucides)||0,lipides:parseFloat(r.lipides)||0}}
+function rowToWater(r){return{id:String(r.id),date:r.date,glasses:r.glasses||0}}
+
+async function loadMeals(){
+  const{data,error}=await sb.from('meals').select('*').order('date',{ascending:false}).limit(200);
+  if(error){console.error('[DB] loadMeals ERREUR:',error);return}
+  mealsLog=(data||[]).map(rowToMeal)
+}
+async function insertMeal(m){
+  const{data,error}=await sb.from('meals').insert({date:m.date,moment:m.moment,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides,qualite:'bon'}).select();
+  if(error){console.error('[DB] insertMeal ERREUR:',error);toast('Erreur ajout repas — '+error.message);return null}
+  if(data&&data[0])m.id=String(data[0].id);return m
+}
+async function deleteMealDB(id){
+  const{error}=await sb.from('meals').delete().eq('id',id);
+  if(error)console.error('[DB] deleteMeal ERREUR:',error)
+}
+async function loadWaterLog(){
+  const{data,error}=await sb.from('water_log').select('*').order('date',{ascending:false}).limit(30);
+  if(error){console.error('[DB] loadWaterLog ERREUR:',error);return}
+  waterLog=(data||[]).map(rowToWater)
+}
+async function upsertWater(date,glasses){
+  const{data,error}=await sb.from('water_log').upsert({date,glasses},{onConflict:'date'}).select();
+  if(error){console.error('[DB] upsertWater ERREUR:',error);return null}
+  return data?.[0]||null
 }
 
 async function deleteNoteDB(id){
