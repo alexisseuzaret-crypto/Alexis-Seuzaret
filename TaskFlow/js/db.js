@@ -4,7 +4,7 @@ const SUPABASE_KEY='sb_publishable_NlPe78o7ymxyj0O6mp9e0g_6iXQjBQ_';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ═══ DONNEES GLOBALES ═══ */
-let tasks=[],habits=[],notes=[],projects=[],projectTasks=[];
+let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[];
 
 /* ═══ MAPPING DB <-> APP ═══ */
 function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
@@ -195,6 +195,50 @@ async function deleteProjectTaskDB(id){
 async function updateProjectTaskPositions(list){
   if(!list.length)return;
   await Promise.all(list.map(t=>sb.from('project_tasks').update({position:t.position}).eq('id',t.id)));
+}
+
+/* ═══ CRUD SPORT ═══ */
+function rowToPushup(r){return{id:String(r.id),date:r.date,completed:r.completed||false,count:r.count}}
+function rowToRun(r){return{id:String(r.id),date:r.date,duration:r.duration,distance:parseFloat(r.distance),calories:r.calories}}
+function rowToSwim(r){return{id:String(r.id),date:r.date,duration:r.duration,style:r.style,calories:r.calories}}
+
+async function loadPushupLog(){
+  const{data,error}=await sb.from('pushup_log').select('*').order('date',{ascending:false}).limit(365);
+  if(error){console.error('[DB] loadPushupLog ERREUR:',error);return}
+  pushupLog=(data||[]).map(rowToPushup)
+}
+async function upsertPushup(date,completed,count){
+  const{data,error}=await sb.from('pushup_log').upsert({date,completed,count},{onConflict:'date'}).select();
+  if(error){console.error('[DB] upsertPushup ERREUR:',error);toast('Erreur sauvegarde pompes — '+error.message);return null}
+  return data?.[0]||null
+}
+async function loadRunningLog(){
+  const{data,error}=await sb.from('running_log').select('*').order('date',{ascending:false}).limit(50);
+  if(error){console.error('[DB] loadRunningLog ERREUR:',error);return}
+  runningLog=(data||[]).map(rowToRun)
+}
+async function insertRun(r){
+  const{data,error}=await sb.from('running_log').insert({date:r.date,duration:r.duration,distance:r.distance,calories:r.calories}).select();
+  if(error){console.error('[DB] insertRun ERREUR:',error);toast('Erreur enregistrement course — '+error.message);return null}
+  if(data&&data[0])r.id=String(data[0].id);return r
+}
+async function deleteRunDB(id){
+  const{error}=await sb.from('running_log').delete().eq('id',id);
+  if(error)console.error('[DB] deleteRun ERREUR:',error)
+}
+async function loadSwimmingLog(){
+  const{data,error}=await sb.from('swimming_log').select('*').order('date',{ascending:false}).limit(50);
+  if(error){console.error('[DB] loadSwimmingLog ERREUR:',error);return}
+  swimmingLog=(data||[]).map(rowToSwim)
+}
+async function insertSwim(s){
+  const{data,error}=await sb.from('swimming_log').insert({date:s.date,duration:s.duration,style:s.style,calories:s.calories}).select();
+  if(error){console.error('[DB] insertSwim ERREUR:',error);toast('Erreur enregistrement natation — '+error.message);return null}
+  if(data&&data[0])s.id=String(data[0].id);return s
+}
+async function deleteSwimDB(id){
+  const{error}=await sb.from('swimming_log').delete().eq('id',id);
+  if(error)console.error('[DB] deleteSwim ERREUR:',error)
 }
 
 async function deleteNoteDB(id){

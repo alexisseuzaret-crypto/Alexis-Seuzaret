@@ -63,6 +63,7 @@
       <button data-v="notes">Notes</button>
       <button data-v="habits">Habitudes</button>
       <button data-v="projets">Projets</button>
+      <button data-v="sport">Sport</button>
       <button data-v="stats">Stats</button>
     </div>
     <button class="btn-new" onclick="fabAction()">+ Nouveau</button>
@@ -135,6 +136,7 @@
         </div>
       </div>
     </div>
+    <div id="v-sport" class="vw"><div id="sport-content"></div></div>
     <div id="v-stats" class="vw"><div id="stats-content"></div></div>
   </div>
 </div>
@@ -151,6 +153,7 @@
   <div class="more-panel" onclick="event.stopPropagation()">
     <button class="more-item" onclick="switchView('habits');closeMore()">&#9989; Habitudes</button>
     <button class="more-item" onclick="switchView('projets');closeMore()">&#128193; Projets</button>
+    <button class="more-item" onclick="switchView('sport');closeMore()">&#127939; Sport</button>
     <button class="more-item" onclick="switchView('stats');closeMore()">&#128200; Stats</button>
   </div>
 </div>
@@ -215,7 +218,7 @@
 </div></div>
 <div class="toast-box" id="toasts"></div>
 
-<script src="js/db.js?v=4"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/db.js?v=5"></script>
+<script src="js/app.js?v=5"></script>
 </body>
 </html>

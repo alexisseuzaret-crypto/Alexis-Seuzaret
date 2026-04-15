@@ -72,6 +72,7 @@ function fabAction(){
   if(activeView==='habits')openHabitModal();
   else if(activeView==='notes')createNote();
   else if(activeView==='projets'){if(activeProjectId)openProjectTaskModal();else openProjectModal();}
+  else if(activeView==='sport')return;
 
   else if(activeView==='calendar'){openModal();setTimeout(()=>{let d;if(calView==='day')d=dayDate(calOff)[0];else if(calView==='week')d=weekDates(calOff)[0];else{d=new Date();d=new Date(d.getFullYear(),d.getMonth()+calOff,1)}document.getElementById('f-due').value=dateKey(d)},50)}
   else openModal();
@@ -709,6 +710,187 @@ async function projectTasksDrop(e){
   renderProjectDetail();await updateProjectTaskPositions(updated);
 }
 
+/* ═══ SPORT ═══ */
+const SWIM_CAL_PER_MIN={crawl:10,brasse:8,dos:8,papillon:12};
+
+function pushupTodayCount(){
+  const start=new Date(2026,0,1),today=new Date();
+  start.setHours(0,0,0,0);today.setHours(0,0,0,0);
+  return Math.round((today-start)/864e5)+1;
+}
+
+function pushupStreaks(){
+  const completed=pushupLog.filter(e=>e.completed).map(e=>e.date).sort();
+  if(!completed.length)return{cur:0,best:0};
+  const todayKey=dateKey(new Date());
+  const yestKey=dateKey(new Date(Date.now()-864e5));
+  /* Meilleur streak */
+  let best=1,run=1;
+  for(let i=1;i<completed.length;i++){
+    const diff=Math.round((new Date(completed[i])-new Date(completed[i-1]))/864e5);
+    run=diff===1?run+1:1;if(run>best)best=run;
+  }
+  /* Streak actuel (doit se terminer aujourd'hui ou hier) */
+  let cur=0;
+  const last=completed[completed.length-1];
+  if(last===todayKey||last===yestKey){
+    cur=1;
+    for(let i=completed.length-2;i>=0;i--){
+      const diff=Math.round((new Date(completed[i+1])-new Date(completed[i]))/864e5);
+      if(diff===1)cur++;else break;
+    }
+  }
+  return{cur,best};
+}
+
+function renderSport(){
+  const todayKey=dateKey(new Date());
+  const count=pushupTodayCount();
+  const todayLog=pushupLog.find(e=>e.date===todayKey);
+  const done=todayLog?.completed||false;
+  const{cur,best}=pushupStreaks();
+
+  /* Section pompes */
+  const pushupHTML=`<div class="sport-card pushup-card${done?' done':''}">
+    <div class="pushup-emoji">&#128170;</div>
+    <div class="pushup-number">${count}</div>
+    <div class="pushup-label">pompes aujourd'hui</div>
+    <button class="pushup-btn${done?' done':''}" onclick="togglePushup()">${done?'&#10003; Déjà fait !':'&#128170; C\'est fait !'}</button>
+    <div class="pushup-streaks">
+      <span>&#128293; ${cur} jour${cur>1?'s':''} consécutif${cur>1?'s':''}</span>
+      <span>&#127942; Record : ${best} jour${best>1?'s':''}</span>
+    </div>
+  </div>`;
+
+  /* Historique course */
+  const runHistory=runningLog.slice(0,5).map(r=>`<div class="sport-history-item">
+    <span class="sport-history-date">${r.date}</span>
+    <span class="sport-history-data">${r.distance} km · ${r.duration} min · <strong>${r.calories} cal</strong></span>
+    <button class="card-act-btn del" onclick="delRun('${r.id}')">&#10005;</button>
+  </div>`).join('')||'<div class="focus-empty">Aucune sortie enregistrée</div>';
+
+  /* Graphique km/semaine sur 4 semaines */
+  const weeklyKm=[],weekLabels=[];
+  for(let w=3;w>=0;w--){
+    const wStart=new Date();wStart.setHours(0,0,0,0);
+    const dow=(wStart.getDay()+6)%7;wStart.setDate(wStart.getDate()-dow-w*7);
+    const wEnd=new Date(wStart);wEnd.setDate(wStart.getDate()+6);
+    const km=runningLog.filter(r=>{const d=new Date(r.date+'T00:00:00');return d>=wStart&&d<=wEnd}).reduce((s,r)=>s+r.distance,0);
+    weeklyKm.push(Math.round(km*10)/10);
+    weekLabels.push(wStart.getDate()+'/'+String(wStart.getMonth()+1).padStart(2,'0'));
+  }
+
+  const runHTML=`<div class="sport-card">
+    <div class="sport-card-title">&#127939; Course à pied</div>
+    <div class="sport-form">
+      <div class="sport-form-row">
+        <div class="sport-fg"><label>Durée (min)</label><input id="run-duration" type="number" min="1" placeholder="30" oninput="updateRunCalc()"></div>
+        <div class="sport-fg"><label>Distance (km)</label><input id="run-distance" type="number" step="0.1" min="0.1" placeholder="5.0" oninput="updateRunCalc()"></div>
+      </div>
+      <div id="run-result" class="sport-result"></div>
+      <button class="sport-save-btn" onclick="saveRun()">Enregistrer la sortie</button>
+    </div>
+    <div class="sport-history-title">Dernières sorties</div>
+    <div class="sport-history">${runHistory}</div>
+    <div class="sport-chart-wrap"><canvas id="run-chart"></canvas></div>
+  </div>`;
+
+  /* Historique natation */
+  const SWIM_LABELS={crawl:'Crawl',brasse:'Brasse',dos:'Dos',papillon:'Papillon'};
+  const swimHistory=swimmingLog.slice(0,5).map(s=>`<div class="sport-history-item">
+    <span class="sport-history-date">${s.date}</span>
+    <span class="sport-history-data">${SWIM_LABELS[s.style]||s.style} · ${s.duration} min · <strong>${s.calories} cal</strong></span>
+    <button class="card-act-btn del" onclick="delSwim('${s.id}')">&#10005;</button>
+  </div>`).join('')||'<div class="focus-empty">Aucune séance enregistrée</div>';
+
+  const swimHTML=`<div class="sport-card">
+    <div class="sport-card-title">&#127944; Natation</div>
+    <div class="sport-form">
+      <div class="sport-form-row">
+        <div class="sport-fg"><label>Durée (min)</label><input id="swim-duration" type="number" min="1" placeholder="45" oninput="updateSwimCalc()"></div>
+        <div class="sport-fg"><label>Style</label>
+          <select id="swim-style" onchange="updateSwimCalc()">
+            <option value="crawl">Crawl — 10 cal/min</option>
+            <option value="brasse">Brasse — 8 cal/min</option>
+            <option value="dos">Dos — 8 cal/min</option>
+            <option value="papillon">Papillon — 12 cal/min</option>
+          </select>
+        </div>
+      </div>
+      <div id="swim-result" class="sport-result"></div>
+      <button class="sport-save-btn" onclick="saveSwim()">Enregistrer la séance</button>
+    </div>
+    <div class="sport-history-title">Dernières séances</div>
+    <div class="sport-history">${swimHistory}</div>
+  </div>`;
+
+  document.getElementById('sport-content').innerHTML=`<div class="sport-grid">${pushupHTML}${runHTML}${swimHTML}</div>`;
+
+  /* Graphique course après rendu */
+  const ctx=document.getElementById('run-chart');
+  if(ctx){
+    const isDark=theme==='dark';
+    new Chart(ctx,{type:'bar',data:{labels:weekLabels,datasets:[{label:'km',data:weeklyKm,backgroundColor:'rgba(249,115,22,.7)',borderColor:isDark?'#1e1e1e':'#fff',borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:isDark?'#666':'#a8a29e',font:{size:11}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:isDark?'#666':'#a8a29e',font:{size:10}},grid:{color:isDark?'#2a2a2a':'#e5e5e5'}}}}});
+  }
+}
+
+async function togglePushup(){
+  const todayKey=dateKey(new Date());
+  const count=pushupTodayCount();
+  const existing=pushupLog.find(e=>e.date===todayKey);
+  const newCompleted=!(existing?.completed||false);
+  const result=await upsertPushup(todayKey,newCompleted,count);
+  if(result){
+    if(existing){existing.completed=newCompleted;existing.count=count}
+    else pushupLog.unshift({id:String(result.id),date:todayKey,completed:newCompleted,count});
+    renderSport();toast(newCompleted?'&#128170; Défi validé !':'Défi annulé');
+  }
+}
+
+function updateRunCalc(){
+  const dur=parseFloat(document.getElementById('run-duration')?.value||0);
+  const dist=parseFloat(document.getElementById('run-distance')?.value||0);
+  const el=document.getElementById('run-result');if(!el)return;
+  el.textContent=(dur>0&&dist>0)?`Tu brûleras ~${Math.round(75*dist*1.036)} calories`:'';
+}
+
+async function saveRun(){
+  const dur=parseInt(document.getElementById('run-duration')?.value||0);
+  const dist=parseFloat(document.getElementById('run-distance')?.value||0);
+  if(!dur||!dist){toast('Durée et distance requises');return}
+  const cal=Math.round(75*dist*1.036);
+  const r={id:null,date:dateKey(new Date()),duration:dur,distance:dist,calories:cal};
+  const result=await insertRun(r);
+  if(result){runningLog.unshift(result);renderSport();toast(`Course enregistrée — ${cal} cal &#128293;`)}
+}
+
+async function delRun(id){
+  const ok=await showConfirm('Supprimer cette sortie ?');if(!ok)return;
+  await deleteRunDB(id);runningLog=runningLog.filter(r=>r.id!==id);renderSport();
+}
+
+function updateSwimCalc(){
+  const dur=parseInt(document.getElementById('swim-duration')?.value||0);
+  const style=document.getElementById('swim-style')?.value||'crawl';
+  const el=document.getElementById('swim-result');if(!el)return;
+  el.textContent=dur>0?`Tu brûleras ~${SWIM_CAL_PER_MIN[style]*dur} calories`:'';
+}
+
+async function saveSwim(){
+  const dur=parseInt(document.getElementById('swim-duration')?.value||0);
+  const style=document.getElementById('swim-style')?.value||'crawl';
+  if(!dur){toast('Durée requise');return}
+  const cal=SWIM_CAL_PER_MIN[style]*dur;
+  const s={id:null,date:dateKey(new Date()),duration:dur,style,calories:cal};
+  const result=await insertSwim(s);
+  if(result){swimmingLog.unshift(result);renderSport();toast(`Natation enregistrée — ${cal} cal &#128293;`)}
+}
+
+async function delSwim(id){
+  const ok=await showConfirm('Supprimer cette séance ?');if(!ok)return;
+  await deleteSwimDB(id);swimmingLog=swimmingLog.filter(s=>s.id!==id);renderSport();
+}
+
 /* ═══ RENDER ALL ═══ */
 const VIEW_RENDERERS={
   focus:renderFocus,
@@ -718,6 +900,7 @@ const VIEW_RENDERERS={
   notes:renderNotes,
   habits:renderHabits,
   projets:renderProjects,
+  sport:renderSport,
   stats:renderStats
 };
 function renderAll(){
@@ -846,7 +1029,7 @@ if(isMobile){calView='day'}
 initTouchDrag();
 
 (async function(){
-  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks()]);
+  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks(),loadPushupLog(),loadRunningLog(),loadSwimmingLog()]);
   document.getElementById('loading-screen').classList.add('hidden');
   renderAll();
   if(isMobile){calMode('day')}
