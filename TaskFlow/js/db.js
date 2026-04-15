@@ -4,7 +4,7 @@ const SUPABASE_KEY='sb_publishable_NlPe78o7ymxyj0O6mp9e0g_6iXQjBQ_';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ═══ DONNEES GLOBALES ═══ */
-let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[],mealsLog=[],waterLog=[];
+let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[],mealsLog=[],waterLog=[],savedMeals=[];
 
 /* ═══ MAPPING DB <-> APP ═══ */
 function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
@@ -268,6 +268,43 @@ async function upsertWater(date,glasses){
   const{data,error}=await sb.from('water_log').upsert({date,glasses},{onConflict:'date'}).select();
   if(error){console.error('[DB] upsertWater ERREUR:',error);return null}
   return data?.[0]||null
+}
+
+/* ═══ REPAS FAVORIS (saved_meals) ═══
+   SQL Supabase :
+   create table saved_meals (id bigserial primary key, name text not null,
+     description text, calories int, proteines numeric, glucides numeric,
+     lipides numeric, created_at timestamptz default now());
+   alter table saved_meals enable row level security;
+   create policy "all" on saved_meals for all using (true) with check (true);
+*/
+function rowToSavedMeal(r){return{id:String(r.id),name:r.name||'',description:r.description||'',calories:r.calories||0,proteines:parseFloat(r.proteines)||0,glucides:parseFloat(r.glucides)||0,lipides:parseFloat(r.lipides)||0}}
+async function loadSavedMeals(){
+  const{data,error}=await sb.from('saved_meals').select('*').order('created_at',{ascending:false});
+  if(error){
+    /* Table pas encore créée → fallback localStorage */
+    console.warn('[DB] saved_meals indisponible, utilisation localStorage');
+    try{savedMeals=JSON.parse(localStorage.getItem('tf-saved-meals')||'[]')}catch(e){savedMeals=[]}
+    return;
+  }
+  savedMeals=(data||[]).map(rowToSavedMeal);
+}
+async function insertSavedMeal(m){
+  const{data,error}=await sb.from('saved_meals').insert({name:m.name,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides}).select();
+  if(error){
+    console.warn('[DB] insertSavedMeal erreur, fallback localStorage:',error);
+    const arr=savedMeals.slice();
+    const item={id:Date.now().toString(),name:m.name,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides};
+    arr.unshift(item);savedMeals=arr;localStorage.setItem('tf-saved-meals',JSON.stringify(arr));
+    return item;
+  }
+  if(data&&data[0])return rowToSavedMeal(data[0]);
+  return null;
+}
+async function deleteSavedMealDB(id){
+  await sb.from('saved_meals').delete().eq('id',id);
+  savedMeals=savedMeals.filter(x=>x.id!==id);
+  localStorage.setItem('tf-saved-meals',JSON.stringify(savedMeals));
 }
 
 async function deleteNoteDB(id){

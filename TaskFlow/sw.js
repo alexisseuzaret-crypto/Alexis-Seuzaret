@@ -1,4 +1,4 @@
-const CACHE='taskflow-v8';
+const CACHE='taskflow-v9';
 const SHELL=['/','/index.html','/style.css','/js/db.js','/js/app.js','/js/food-db.js','/icon-192.svg','/icon-512.svg','/manifest.json'];
 
 self.addEventListener('install',e=>{

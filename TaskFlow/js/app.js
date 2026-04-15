@@ -20,6 +20,7 @@ const MOIS=['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','o
 const MOIS_FULL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS_FULL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const CAT_COLORS={travail:'amber',personnel:'blue',sante:'green',urgent:'red',apprentissage:'or3'};
+const CAL_CAT_COLORS={travail:'#3B82F6',personnel:'#F97316',sante:'#22C55E',urgent:'#EF4444',apprentissage:'#A855F7'};
 function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function filt(){return tasks.filter(t=>(filterCategory==='all'||t.cat===filterCategory)&&(filterPriority==='all'||t.prio===filterPriority))}
 
@@ -71,8 +72,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))docum
 
 /* ═══ FAB CONTEXTUEL ═══ */
 function fabAction(){
-  if(activeView==='habits')openHabitModal();
-  else if(activeView==='notes')createNote();
+  if(activeView==='notes')createNote();
   else if(activeView==='projets'){if(activeProjectId)openProjectTaskModal();else openProjectModal();}
   else if(activeView==='sport')return;
   else if(activeView==='alimentation')return;
@@ -294,11 +294,6 @@ function renderFocus(){
     :scored.map(x=>tasks.find(t=>t.id===x.id)).filter(Boolean);
   const top3=top3Sorted.map((t,i)=>{const d=t.status==='done';const meta=[];if(t.due){const dd=daysUntil(t.due);meta.push(dd<=0?'<span style="color:var(--red)">En retard</span>':dd<=1?'<span style="color:var(--red)">Demain</span>':'&#128197; '+t.due)}meta.push(PRIORITY_LABELS[t.prio]);
     return `<div class="focus-task${d?' done':''}" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="focus-task-rank">${i+1}</div><div class="focus-chk${d?' on':''}" onclick="toggleDone('${t.id}')"></div><div class="focus-task-info"><div class="focus-task-title">${escapeHtml(t.title)}</div><div class="focus-task-meta">${meta.join(' · ')}</div></div><button class="card-act-btn" onclick="openModal('${t.id}')" style="flex-shrink:0;opacity:.6" title="Modifier">&#9998;</button></div>`}).join('')||'<div class="focus-empty">Aucune tâche en attente !</div>';
-  const habitsToday=habits.filter(hb=>hb.checks&&hb.checks[today]).length;
-  const habitPct=habits.length?Math.round(habitsToday/habits.length*100):0;
-  const sortedHabits=habits.slice().sort(byPos);
-  const habitsHTML=sortedHabits.map(hb=>{const checked=hb.checks&&hb.checks[today];const{cur:streak}=streaksCache[hb.id]||{cur:0,best:0};
-    return `<div class="focus-habit${checked?' checked':''}" draggable="true" data-id="${hb.id}" ondragstart="dStart(event)" ondragend="dEnd(event)" onclick="toggleFocusHabit('${hb.id}')"><div class="focus-chk${checked?' on':''}"></div><span class="focus-habit-name">${escapeHtml(hb.name)}</span>${streak>0?'<span class="focus-habit-streak">&#128293; '+streak+'j</span>':''}</div>`}).join('')||'<div class="focus-empty">Aucune habitude</div>';
   const upcoming=tasks.filter(t=>t.due&&t.status!=='done'&&daysUntil(t.due)<=3).sort((a,b)=>a.due.localeCompare(b.due));
   const deadlines=upcoming.map(t=>{const dd=daysUntil(t.due);const u=dd<=1;const w=dd<=2&&!u;const cls=u?'urgent':w?'warning':'';const dc=u?'red':w?'orange':'normal';const dl=dd<0?'En retard':dd===0?"Aujourd'hui":dd===1?'Demain':dd+'j';
     return `<div class="focus-deadline ${cls}"><div class="focus-deadline-info"><div class="focus-deadline-title">${escapeHtml(t.title)}</div><div class="focus-deadline-cat"><span class="badge b-${t.cat}" style="font-size:.58rem">${CATEGORY_LABELS[t.cat]}</span></div></div><span class="focus-deadline-days ${dc}">${dl}</span></div>`}).join('')||'<div class="focus-empty">Aucune échéance dans les 3 prochains jours</div>';
@@ -346,7 +341,6 @@ function renderFocus(){
   </div>
   <div class="dash-mini-row">${pomposHTML}${nutriHTML}</div>
   <div class="focus-section" id="focus-top3-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusTasksDrop(event)"><div class="focus-section-title"><span>&#127919;</span> Mes 3 priorités du jour</div>${top3}</div>
-  <div class="focus-section" id="focus-habits-section" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="focusHabitsDrop(event)"><div class="focus-section-title"><span>&#9989;</span> Habitudes du jour</div><div class="focus-habits-count">${habitsToday}/${habits.length} (${habitPct}%)</div><div class="focus-habits-bar"><div class="focus-habits-fill" style="width:${habitPct}%"></div></div>${habitsHTML}</div>
   <div class="focus-section"><div class="focus-section-title"><span>&#9200;</span> Échéances proches</div>${deadlines}</div>
   <div class="focus-section"><div class="focus-section-title"><span>&#128193;</span> Projets en cours</div>${focusProjets}</div>`;
 }
@@ -489,7 +483,7 @@ function renderCalendar(){
   document.getElementById('cal-unpl').innerHTML=unpl.map(t=>`<div class="cal-mini" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="cal-mini-t">${escapeHtml(t.title)}</div><div class="cal-mini-s">${CATEGORY_LABELS[t.cat]||''} · ${t.dur||'—'}</div></div>`).join('')||'<div style="color:var(--tx3);padding:12px;font-size:.78rem;text-align:center">Aucune</div>';
   document.getElementById('cal-hdr').innerHTML='<div class="cal-hdr-time"></div>'+dates.map(d=>`<div class="cal-hdr-day ${dateKey(d)===today?'today':''}">${JOURS[(d.getDay()+6)%7]}<span class="num">${d.getDate()}</span></div>`).join('');
   const timeCol=HOURS.map(h=>`<div class="cal-time-slot">${String(h).padStart(2,'0')}h</div>`).join('');
-  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:46px" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
+  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;const bg=CAL_CAT_COLORS[t.cat]||'#6B7280';return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:46px;background:${bg};border-left-color:rgba(255,255,255,.4)" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
@@ -1061,11 +1055,132 @@ async function delSwim(id){
 
 /* ═══ ALIMENTATION ═══ */
 let alimMoment='dejeuner',selectedFoodItem=null,alimCaloricGoal=userSettings.caloricGoal||1800;
-const ALIM_MOMENTS={petit_dej:'Petit-déjeuner',dejeuner:'Déjeuner',diner:'Dîner',snacks:'Snacks'};
+let alimMode='search'; /* 'search' | 'manuel' */
+let pendingSaveMealId=null;
+const ALIM_MOMENTS={petit_dej:'Petit-déjeuner',dejeuner:'Déjeuner',diner:'Dîner',snacks:'Snacks',shaker:'Shaker'};
+
+/* Poids moyen par unité pour les aliments courants (grammes/unité) */
+const FOOD_UNIT_WG={
+  'banane':120,'oeuf':55,'pomme':150,'orange':130,'poire':160,'kiwi':70,
+  'carotte':80,'tomate':120,'yaourt':125,'concombre':300,'courgette':200,
+  'tranche':30,'biscuit':10,'galette':9,'verre':250
+};
 
 function setAlimMoment(m){
   alimMoment=m;
   document.querySelectorAll('.alim-moment-btn').forEach(b=>b.classList.toggle('act',b.dataset.m===m));
+}
+function setAlimMode(m){
+  alimMode=m;
+  document.querySelectorAll('.alim-mode-tab').forEach(b=>b.classList.toggle('act',b.dataset.mode===m));
+  const sp=document.getElementById('alim-search-panel');
+  const mp=document.getElementById('alim-manuel-panel');
+  if(sp)sp.style.display=m==='search'?'':'none';
+  if(mp)mp.style.display=m==='manuel'?'':'none';
+}
+
+/* Calcul automatique depuis la description (ex: "100g de riz", "2 oeufs") */
+function calculateFreeItem(){
+  const raw=document.getElementById('free-desc')?.value.trim();
+  if(!raw){toast('Entrez une description d\'abord');return}
+  const lower=raw.toLowerCase();
+  /* Pattern: Xg [de/d'] <aliment> */
+  const gm=lower.match(/^(\d+(?:[.,]\d+)?)\s*g(?:r(?:ammes?)?)?\s*(?:de\s+|d')?(.+)$/);
+  if(gm){
+    const grams=parseFloat(gm[1].replace(',','.'));
+    const name=gm[2].trim();
+    const food=FOOD_DB.find(f=>f.n.toLowerCase().includes(name)||name.includes(f.n.toLowerCase().split(' ')[0]));
+    if(food){setFreeFields(food,grams,raw);return}
+  }
+  /* Pattern: X <aliment> (par unité) */
+  const um=lower.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
+  if(um){
+    const count=parseFloat(um[1].replace(',','.'));
+    const name=um[2].trim();
+    let unitG=null;
+    for(const[key,g] of Object.entries(FOOD_UNIT_WG)){if(name.includes(key)){unitG=g;break}}
+    if(unitG){
+      const grams=count*unitG;
+      const food=FOOD_DB.find(f=>f.n.toLowerCase().includes(name.split(' ')[0])||name.split(' ')[0].includes(f.n.toLowerCase().split(' ')[0]));
+      if(food){setFreeFields(food,grams,raw);toast(`${count}×${name} ≈ ${grams}g (${food.n})`);return}
+      /* Poids unitaire connu mais pas dans FOOD_DB */
+      toast(`Poids estimé ${grams}g — entrez les calories manuellement`);
+      return;
+    }
+  }
+  toast('Aliment non reconnu — entrez les valeurs manuellement');
+}
+function setFreeFields(food,grams,raw){
+  const el=id=>document.getElementById(id);
+  if(el('free-cal'))el('free-cal').value=Math.round(food.k*grams/100);
+  if(el('free-prot'))el('free-prot').value=(food.p*grams/100).toFixed(1);
+  if(el('free-gluc'))el('free-gluc').value=(food.g*grams/100).toFixed(1);
+  if(el('free-lip'))el('free-lip').value=(food.l*grams/100).toFixed(1);
+  toast(`Calculé : ${Math.round(food.k*grams/100)} cal`);
+}
+
+async function addFreeItem(){
+  const desc=document.getElementById('free-desc')?.value.trim();
+  const cal=parseInt(document.getElementById('free-cal')?.value||0);
+  const prot=parseFloat(document.getElementById('free-prot')?.value||0);
+  const gluc=parseFloat(document.getElementById('free-gluc')?.value||0);
+  const lip=parseFloat(document.getElementById('free-lip')?.value||0);
+  if(!desc){toast('Description requise');return}
+  if(!cal||cal<=0){toast('Calories requises (ou cliquer Estimer d\'abord)');return}
+  const meal={id:null,date:dateKey(new Date()),moment:alimMoment,description:desc,calories:cal,proteines:prot,glucides:gluc,lipides:lip};
+  const result=await insertMeal(meal);
+  if(result){
+    mealsLog.unshift(result);
+    ['free-desc','free-cal','free-prot','free-gluc','free-lip'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    renderAlimentation();toast(`Ajouté : ${cal} cal`);
+  }
+}
+
+/* ── Repas favoris ── */
+function openFavorisPanel(){
+  const p=document.getElementById('favoris-panel');if(!p)return;
+  p.classList.add('open');
+  renderFavorisPanel();
+}
+function closeFavorisPanel(){
+  const p=document.getElementById('favoris-panel');if(p)p.classList.remove('open');
+  pendingSaveMealId=null;
+}
+function renderFavorisPanel(){
+  const p=document.getElementById('favoris-panel');if(!p)return;
+  const saveRowHTML=pendingSaveMealId
+    ?`<div class="favoris-save-row"><input id="fav-name-input" placeholder="Nom du repas…" onkeydown="if(event.key==='Enter')confirmSaveFav()"><button class="favoris-save-confirm" onclick="confirmSaveFav()">Sauvegarder</button></div>`
+    :'';
+  const listHTML=savedMeals.length
+    ?savedMeals.map((fav,i)=>`<div class="fav-item"><div class="fav-item-info" onclick="logFav(${i})"><div class="fav-item-name">${escapeHtml(fav.name)}</div><div class="fav-item-desc">${escapeHtml(fav.description)}</div></div><span class="fav-item-cal">${fav.calories} cal</span><button class="fav-item-del" onclick="event.stopPropagation();delFav(${i})" title="Supprimer">&#10005;</button></div>`).join('')
+    :'<div class="favoris-empty">Aucun repas favori — sauvegardez depuis la liste de vos repas</div>';
+  p.innerHTML=`<div class="favoris-panel-hd"><span class="favoris-panel-title">&#9733; Mes repas favoris</span><button class="favoris-panel-close" onclick="closeFavorisPanel()">&#10005;</button></div>${saveRowHTML}${listHTML}`;
+  if(pendingSaveMealId)setTimeout(()=>{const i=document.getElementById('fav-name-input');if(i)i.focus()},50);
+}
+async function confirmSaveFav(){
+  const name=document.getElementById('fav-name-input')?.value.trim();
+  if(!name){toast('Nom requis');return}
+  const m=mealsLog.find(x=>x.id===pendingSaveMealId);if(!m){pendingSaveMealId=null;closeFavorisPanel();return}
+  const result=await insertSavedMeal({name,description:m.description,calories:m.calories,proteines:m.proteines||0,glucides:m.glucides||0,lipides:m.lipides||0});
+  if(result){savedMeals.unshift(result);toast(`"${name}" sauvegardé comme favori ✓`)}
+  pendingSaveMealId=null;closeFavorisPanel();
+}
+function saveMealFav(mealId){
+  pendingSaveMealId=mealId;
+  openFavorisPanel();
+}
+async function logFav(idx){
+  const fav=savedMeals[idx];if(!fav)return;
+  const meal={id:null,date:dateKey(new Date()),moment:alimMoment,description:fav.description,calories:fav.calories,proteines:fav.proteines,glucides:fav.glucides,lipides:fav.lipides};
+  const result=await insertMeal(meal);
+  if(result){mealsLog.unshift(result);renderAlimentation();toast(`${fav.name} — ${fav.calories} cal`)}
+  closeFavorisPanel();
+}
+async function delFav(idx){
+  const fav=savedMeals[idx];if(!fav)return;
+  await deleteSavedMealDB(fav.id);
+  renderFavorisPanel();
+  toast('Favori supprimé');
 }
 
 function onFoodSearch(val){
@@ -1144,15 +1259,39 @@ function renderAlimentation(){
     <div class="alim-moments">
       ${Object.entries(ALIM_MOMENTS).map(([k,v])=>`<button class="alim-moment-btn${alimMoment===k?' act':''}" data-m="${k}" onclick="setAlimMoment('${k}')">${v}</button>`).join('')}
     </div>
-    <div class="alim-search-wrap">
-      <input id="food-search" class="alim-search-input" placeholder="&#128269; Rechercher un aliment..." oninput="onFoodSearch(this.value)" autocomplete="off">
-      <div id="food-suggestions" class="food-suggestions" style="display:none"></div>
+    <div class="alim-mode-tabs">
+      <button class="alim-mode-tab${alimMode==='search'?' act':''}" data-mode="search" onclick="setAlimMode('search')">&#128269; Base de données</button>
+      <button class="alim-mode-tab${alimMode==='manuel'?' act':''}" data-mode="manuel" onclick="setAlimMode('manuel')">&#9998; Saisie libre</button>
     </div>
-    <div class="alim-qty-row">
-      <div class="sport-fg"><label>Quantité (grammes)</label><input id="food-quantity" type="number" min="1" placeholder="100" oninput="updateMealCalcPreview()"></div>
+    <div id="alim-search-panel" style="${alimMode!=='search'?'display:none':''}">
+      <div class="alim-search-wrap">
+        <input id="food-search" class="alim-search-input" placeholder="&#128269; Rechercher un aliment..." oninput="onFoodSearch(this.value)" autocomplete="off">
+        <div id="food-suggestions" class="food-suggestions" style="display:none"></div>
+      </div>
+      <div class="alim-qty-row">
+        <div class="sport-fg"><label>Quantité (grammes)</label><input id="food-quantity" type="number" min="1" placeholder="100" oninput="updateMealCalcPreview()"></div>
+      </div>
+      <div id="meal-calc-preview" class="meal-calc-preview"></div>
+      <button class="sport-save-btn" onclick="addMealItem()">+ Ajouter au repas</button>
     </div>
-    <div id="meal-calc-preview" class="meal-calc-preview"></div>
-    <button class="sport-save-btn" onclick="addMealItem()">+ Ajouter au repas</button>
+    <div id="alim-manuel-panel" style="${alimMode!=='manuel'?'display:none':''}">
+      <div class="alim-free-group">
+        <span class="alim-free-label">Description (ex : 1 banane, 100g de riz, 2 oeufs…)</span>
+        <input id="free-desc" class="alim-free-input" type="text" placeholder="Ex : 1 banane, 100g de poulet, mon shaker…">
+      </div>
+      <button class="alim-calc-btn" onclick="calculateFreeItem()">&#9889; Estimer automatiquement</button>
+      <div class="alim-free-row">
+        <div class="alim-free-group"><span class="alim-free-label">Calories</span><input id="free-cal" class="alim-free-input" type="number" min="0" placeholder="200"></div>
+        <div class="alim-free-group"><span class="alim-free-label">Protéines (g)</span><input id="free-prot" class="alim-free-input" type="number" min="0" step="0.1" placeholder="10"></div>
+      </div>
+      <div class="alim-free-row" style="margin-bottom:14px">
+        <div class="alim-free-group"><span class="alim-free-label">Glucides (g)</span><input id="free-gluc" class="alim-free-input" type="number" min="0" step="0.1" placeholder="25"></div>
+        <div class="alim-free-group"><span class="alim-free-label">Lipides (g)</span><input id="free-lip" class="alim-free-input" type="number" min="0" step="0.1" placeholder="5"></div>
+      </div>
+      <button class="sport-save-btn" onclick="addFreeItem()">+ Ajouter au repas</button>
+    </div>
+    <button class="alim-fav-btn" onclick="openFavorisPanel()">&#9733; Mes repas favoris</button>
+    <div class="favoris-panel" id="favoris-panel"></div>
   </div>`;
   /* Repas du jour groupés par moment */
   const mealsHTML=Object.entries(ALIM_MOMENTS).map(([mk,ml])=>{
@@ -1164,6 +1303,7 @@ function renderAlimentation(){
       ${items.map(m=>`<div class="alim-meal-item">
         <span class="alim-meal-desc">${escapeHtml(m.description)}</span>
         <span class="alim-meal-cal">${m.calories} cal</span>
+        <button class="alim-save-fav" onclick="saveMealFav('${m.id}')" title="Sauvegarder comme favori">&#9733;</button>
         <button class="card-act-btn del" onclick="delMeal('${m.id}')">&#10005;</button>
       </div>`).join('')}
     </div>`
@@ -1223,7 +1363,6 @@ const VIEW_RENDERERS={
   calendar:renderCalendar,
   eisenhower:renderEisenhower,
   notes:renderNotes,
-  habits:renderHabits,
   projets:renderProjects,
   sport:renderSport,
   alimentation:renderAlimentation,
@@ -1356,7 +1495,7 @@ if(isMobile){calView='day'}
 initTouchDrag();
 
 (async function(){
-  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks(),loadPushupLog(),loadRunningLog(),loadSwimmingLog(),loadMeals(),loadWaterLog()]);
+  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks(),loadPushupLog(),loadRunningLog(),loadSwimmingLog(),loadMeals(),loadWaterLog(),loadSavedMeals()]);
   document.getElementById('loading-screen').classList.add('hidden');
   renderAll();
   if(isMobile){calMode('day')}

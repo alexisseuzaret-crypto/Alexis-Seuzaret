@@ -405,7 +405,7 @@ button,input,textarea,select{font-family:inherit}
 .focus-projet-pct{font-size:.75rem;color:var(--tx3);flex-shrink:0}
 
 /* ══ SPORT ══ */
-.sport-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+.sport-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
 .sport-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);padding:22px}
 .sport-card-title{font-size:.95rem;font-weight:700;color:var(--tx);margin-bottom:18px}
 /* Pompes */
@@ -483,6 +483,43 @@ button,input,textarea,select{font-family:inherit}
 .alim-meal-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surf2);border-radius:6px;font-size:.8rem;margin-bottom:4px}
 .alim-meal-desc{flex:1;color:var(--tx2)}
 .alim-meal-cal{color:var(--tx);font-weight:600;flex-shrink:0}
+.alim-save-fav{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.85rem;padding:2px 5px;border-radius:5px;min-height:28px;min-width:28px;flex-shrink:0;transition:.15s}
+.alim-save-fav:hover{color:var(--or)}
+/* Mode tabs */
+.alim-mode-tabs{display:flex;gap:6px;margin-bottom:16px}
+.alim-mode-tab{flex:1;padding:8px;border:1px solid var(--brd);border-radius:8px;background:transparent;color:var(--tx2);font-size:.78rem;font-weight:500;cursor:pointer;transition:.15s;text-align:center}
+.alim-mode-tab:hover{background:var(--surf2)}.alim-mode-tab.act{background:var(--or);border-color:var(--or);color:#fff;font-weight:600}
+/* Saisie libre */
+.alim-free-group{margin-bottom:12px}
+.alim-free-label{font-size:.72rem;color:var(--tx3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block}
+.alim-free-input{width:100%;padding:9px 12px;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);color:var(--tx);font-size:.86rem;outline:none;transition:.15s;box-sizing:border-box}
+.alim-free-input:focus{border-color:var(--or)}
+.alim-free-row{display:flex;gap:8px}
+.alim-free-row .alim-free-group{flex:1;margin-bottom:0}
+.alim-calc-btn{padding:7px 12px;border:1px solid var(--brd);border-radius:8px;background:var(--surf2);color:var(--tx2);font-size:.78rem;cursor:pointer;transition:.15s;white-space:nowrap;margin-bottom:12px}
+.alim-calc-btn:hover{border-color:var(--or);color:var(--or)}
+/* Favoris */
+.alim-fav-btn{width:100%;padding:9px;border:1px solid var(--brd);border-radius:8px;background:transparent;color:var(--tx2);font-size:.8rem;cursor:pointer;transition:.15s;margin-top:8px;font-weight:500}
+.alim-fav-btn:hover{border-color:var(--or);color:var(--or);background:var(--orGlow)}
+.favoris-panel{background:var(--surf2);border:1px solid var(--brd);border-radius:var(--r);padding:14px;margin-top:8px;display:none}
+.favoris-panel.open{display:block}
+.favoris-panel-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.favoris-panel-title{font-size:.82rem;font-weight:700;color:var(--tx)}
+.favoris-panel-close{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.9rem;padding:2px 8px;border-radius:5px;min-height:28px}
+.favoris-panel-close:hover{color:var(--tx)}
+.favoris-save-row{display:flex;gap:6px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)}
+.favoris-save-row input{flex:1;padding:7px 10px;border:1px solid var(--brd);border-radius:8px;background:var(--surf);color:var(--tx);font-size:.8rem;outline:none}
+.favoris-save-row input:focus{border-color:var(--or)}
+.favoris-save-confirm{padding:7px 12px;border:none;border-radius:8px;background:var(--or);color:#fff;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.favoris-empty{font-size:.8rem;color:var(--tx3);text-align:center;padding:12px 0}
+.fav-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surf);border:1px solid var(--brd);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:.15s}
+.fav-item:hover{border-color:var(--or)}
+.fav-item-info{flex:1;min-width:0}
+.fav-item-name{font-size:.83rem;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fav-item-desc{font-size:.7rem;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fav-item-cal{font-size:.8rem;color:var(--or);font-weight:700;flex-shrink:0}
+.fav-item-del{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.85rem;padding:3px 6px;border-radius:5px;min-height:28px;flex-shrink:0;transition:.15s}
+.fav-item-del:hover{color:var(--red);background:var(--redbg)}
 /* Graphique */
 .alim-chart-wrap{height:140px}
 
