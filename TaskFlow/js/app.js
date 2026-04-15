@@ -358,8 +358,7 @@ function openBilanHebdo(){
   /* 7 derniers jours */
   const days=Array.from({length:7},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()-6+i);return dateKey(d)});
   /* Tâches terminées */
-  const tasksDone=days.map(d=>tasks.filter(t=>t.completedAt===d).length);
-  const totalTasks=tasksDone.reduce((a,b)=>a+b,0);
+  const totalTasks=days.reduce((s,d)=>s+tasks.filter(t=>t.completedAt===d).length,0);
   /* Habitudes */
   const habitsDonePerDay=days.map(d=>habits.filter(hb=>hb.checks&&hb.checks[d]).length);
   const habitTotal=habitsDonePerDay.reduce((a,b)=>a+b,0);
@@ -390,7 +389,8 @@ function openBilanHebdo(){
     const cal=Math.round(mn.reduce((s,m)=>s+(m.calories||0),0));
     const ts=Math.min(25,dn*8);
     const hs=habits.length?Math.round(hn/habits.length*25):0;
-    const ps=hp&&hp.completed?25:hp?Math.round(Math.min(1,hp.count/pushupTodayCount())*25):0;
+    const pastGoal=Math.round((new Date(d+'T00:00:00')-new Date(2026,0,1))/864e5)+1;
+    const ps=hp&&hp.completed?25:hp?Math.round(Math.min(1,hp.count/pastGoal)*25):0;
     const ratio=cal/goal;
     const ns=cal===0?0:ratio<=1.05?25:ratio<=1.15?15:ratio<=1.3?8:0;
     return ts+hs+ps+ns;
