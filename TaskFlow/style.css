@@ -19,7 +19,7 @@
   --tx:#1c1917;--tx2:#57534e;--tx3:#a8a29e;
   --orGlow:rgba(249,115,22,.08);--redbg:rgba(239,68,68,.08);--bluebg:rgba(59,130,246,.08);
   --greenbg:rgba(34,197,94,.08);--yellowbg:rgba(234,179,8,.08);--amberbg:rgba(217,119,6,.08);
-  --purplebg:rgba(168,85,247,.08);--sh:0 8px 32px rgba(0,0,0,.08);
+  --purplebg:rgba(168,85,247,.08);--graybg:rgba(107,114,128,.08);--sh:0 8px 32px rgba(0,0,0,.08);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--tx);display:flex;height:100vh;height:100dvh;overflow:hidden;transition:background .3s,color .3s}
