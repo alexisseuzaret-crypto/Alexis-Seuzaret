@@ -13,9 +13,9 @@
 - [x] P2-7 : Date visible (updatedAt) dans la liste des notes
 - [x] P2-8 : Toasts : limiter à 3 simultanés max, dédupliquer
 
-## Phase 3 — Refactoring
-- [ ] P3-1 : Extraire `daysUntil(dateStr)` — fonction utilitaire (élimine 3 duplications)
-- [ ] P3-2 : Remplacer `135px` hardcodé par variable CSS `--topbar-h`
-- [ ] P3-3 : Mettre en cache `calcStreaks()` — calculer une seule fois par render
-- [ ] P3-4 : Ajouter vérification `if(document.querySelector('.modal-bg.open'))` en haut de `switchView`
-- [ ] P3-5 : Mettre à jour `brain/projects/taskflow.md` avec décisions techniques
+## Phase 3 — Refactoring ✅
+- [x] P3-1 : Extraire `daysUntil(dateStr)` — fonction utilitaire (élimine 3 duplications)
+- [x] P3-2 : Remplacer `135px` hardcodé par variable CSS `--topbar-h`
+- [x] P3-3 : Mettre en cache `calcStreaks()` — calculer une seule fois par render
+- [x] P3-4 : Ajouter vérification `if(document.querySelector('.modal-bg.open'))` en haut de `switchView`
+- [x] P3-5 : Mettre à jour `brain/projects/taskflow.md` avec décisions techniques
