@@ -7,8 +7,8 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[],mealsLog=[],waterLog=[],savedMeals=[],calEvents=[];
 
 /* ═══ MAPPING DB <-> APP ═══ */
-function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
-function taskToRow(t){return{title:t.title,description:t.desc||'',category:t.cat||'travail',priority:t.prio||'moyenne',duration:t.dur||'',due_date:t.due||null,completed:t.status==='done',status:t.status||'todo',quadrant:t.eq||'plan',cal_day:t.calDay||null,cal_hour:t.calHour||null,completed_at:t.completedAt||null,recurrence_type:t.recurrence||'never',recurrence_day:t.recurDay||null,position:t.position??null}}
+function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.status||'todo',eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
+function taskToRow(t){return{title:t.title,description:t.desc||'',category:t.cat||'travail',priority:t.prio||'moyenne',duration:t.dur||'',due_date:t.due||null,status:t.status||'todo',quadrant:t.eq||'plan',cal_day:t.calDay||null,cal_hour:t.calHour||null,completed_at:t.completedAt||null,recurrence_type:t.recurrence||'never',recurrence_day:t.recurDay||null,position:t.position??null}}
 function rowToHabit(r){return{id:String(r.id),name:r.name||'',checks:r.completions||{},position:r.position??null}}
 function habitToRow(h){return{name:h.name,completions:h.checks||{},position:h.position??null}}
 function rowToNote(r){return{id:String(r.id),title:r.title||'',content:r.content||'',cat:r.category||'autre',createdAt:r.created_at,updatedAt:r.updated_at,position:r.position??null}}
@@ -114,7 +114,7 @@ async function insertNote(n){
   return n
 }
 async function updateNoteDB(n){
-  const row=noteToRow(n);
+  const row={...noteToRow(n),updated_at:new Date().toISOString()};
   console.warn('[DB] updateNote → id='+n.id,row);
   const{data,error}=await sb.from('notes').update(row).eq('id',n.id).select();
   if(error){console.error('[DB] updateNote ERREUR:',error);toast('Erreur mise à jour note — '+error.message);return}
@@ -251,7 +251,7 @@ async function loadMeals(){
   mealsLog=(data||[]).map(rowToMeal)
 }
 async function insertMeal(m){
-  const{data,error}=await sb.from('meals').insert({date:m.date,moment:m.moment,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides,qualite:'bon'}).select();
+  const{data,error}=await sb.from('meals').insert({date:m.date,moment:m.moment,description:m.description,calories:m.calories,proteines:m.proteines,glucides:m.glucides,lipides:m.lipides}).select();
   if(error){console.error('[DB] insertMeal ERREUR:',error);toast('Erreur ajout repas — '+error.message);return null}
   if(data&&data[0])m.id=String(data[0].id);return m
 }
