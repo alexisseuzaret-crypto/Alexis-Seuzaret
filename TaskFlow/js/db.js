@@ -4,7 +4,7 @@ const SUPABASE_KEY='sb_publishable_NlPe78o7ymxyj0O6mp9e0g_6iXQjBQ_';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ═══ DONNEES GLOBALES ═══ */
-let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[],mealsLog=[],waterLog=[],savedMeals=[];
+let tasks=[],habits=[],notes=[],projects=[],projectTasks=[],pushupLog=[],runningLog=[],swimmingLog=[],mealsLog=[],waterLog=[],savedMeals=[],calEvents=[];
 
 /* ═══ MAPPING DB <-> APP ═══ */
 function rowToTask(r){return{id:String(r.id),title:r.title||'',desc:r.description||'',cat:r.category||'travail',prio:r.priority||'moyenne',dur:r.duration||'',due:r.due_date||'',status:r.completed?'done':(r.status||'todo'),eq:r.quadrant||'plan',calDay:r.cal_day||null,calHour:r.cal_hour||null,completedAt:r.completed_at||null,recurrence:r.recurrence_type||'never',recurDay:r.recurrence_day||null,position:r.position??null}}
@@ -330,4 +330,35 @@ async function deleteNoteDB(id){
   } else {
     console.warn('[DB] deleteNote ← OK');
   }
+}
+
+/* ═══ CRUD EVENTS CALENDRIER ═══
+   SQL Supabase à exécuter dans le dashboard :
+
+   create table events (
+     id bigserial primary key,
+     title text not null,
+     date date not null,
+     start_hour int not null default 9,
+     duration int not null default 60,
+     color text default '#3b82f6',
+     created_at timestamptz default now()
+   );
+   alter table events enable row level security;
+   create policy "all" on events for all using (true) with check (true);
+*/
+function rowToCalEvent(r){return{id:String(r.id),title:r.title||'',date:r.date||'',startHour:r.start_hour||9,duration:r.duration||60,color:r.color||'#3b82f6'}}
+async function loadCalEvents(){
+  const{data,error}=await sb.from('events').select('*').order('date',{ascending:false}).limit(500);
+  if(error){console.error('[DB] loadCalEvents ERREUR:',error);return}
+  calEvents=(data||[]).map(rowToCalEvent)
+}
+async function insertCalEvent(ev){
+  const{data,error}=await sb.from('events').insert({title:ev.title,date:ev.date,start_hour:ev.startHour,duration:ev.duration,color:ev.color||'#3b82f6'}).select();
+  if(error){console.error('[DB] insertCalEvent ERREUR:',error);toast('Erreur création événement — '+error.message);return null}
+  if(data&&data[0])ev.id=String(data[0].id);return ev
+}
+async function deleteCalEventDB(id){
+  const{error}=await sb.from('events').delete().eq('id',id);
+  if(error){console.error('[DB] deleteCalEvent ERREUR:',error);toast('Erreur suppression événement — '+error.message)}
 }

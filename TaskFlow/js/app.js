@@ -498,11 +498,39 @@ function renderCalendar(){
   document.getElementById('cal-unpl').innerHTML=unpl.map(t=>`<div class="cal-mini" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)"><div class="cal-mini-t">${escapeHtml(t.title)}</div><div class="cal-mini-s">${CATEGORY_LABELS[t.cat]||''} · ${t.dur||'—'}</div></div>`).join('')||'<div style="color:var(--tx3);padding:12px;font-size:.78rem;text-align:center">Aucune</div>';
   document.getElementById('cal-hdr').innerHTML='<div class="cal-hdr-time"></div>'+dates.map(d=>`<div class="cal-hdr-day ${dateKey(d)===today?'today':''}">${JOURS[(d.getDay()+6)%7]}<span class="num">${d.getDate()}</span></div>`).join('');
   const timeCol=HOURS.map(h=>`<div class="cal-time-slot">${String(h).padStart(2,'0')}h</div>`).join('');
-  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(()=>'<div class="cal-hour-slot"></div>').join('');const evts=dt.map(t=>{const hh=t.calHour||7;const bg=CAL_CAT_COLORS[t.cat]||'#6B7280';const durPx=Math.max(20,Math.round(parseDuration(t.dur)/60*48)-2);return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:${durPx}px;background:${bg};border-left-color:rgba(255,255,255,.4)" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cdDrop(event)">${slots}${evts}</div>`}).join('');
+  const dayCols=dates.map(d=>{const key=dateKey(d),dt=filtered.filter(t=>t.calDay===key);const slots=HOURS.map(h=>`<div class="cal-hour-slot" onclick="openEventModal('${key}',${h})"></div>`).join('');const evts=dt.map(t=>{const hh=t.calHour||7;const bg=CAL_CAT_COLORS[t.cat]||'#6B7280';const durPx=Math.max(20,Math.round(parseDuration(t.dur)/60*48)-2);return`<div class="cal-evt" style="top:${(hh-7)*48}px;height:${durPx}px;background:${bg};border-left-color:rgba(255,255,255,.4)" draggable="true" data-id="${t.id}" ondragstart="dStart(event)" ondragend="dEnd(event)">${escapeHtml(t.title)}</div>`}).join('');const dayEvts=(calEvents||[]).filter(ev=>ev.date===key);const evtBlocks=dayEvts.map(ev=>{const hh=ev.startHour||7;const durPx=Math.max(20,Math.round(ev.duration/60*48)-2);return`<div class="cal-event" style="top:${(hh-7)*48}px;height:${durPx}px;background:${ev.color||'#3b82f6'}"><span>${escapeHtml(ev.title)}</span><button class="cal-event-del" onclick="event.stopPropagation();deleteCalEvent('${ev.id}')" title="Supprimer">&#10005;</button></div>`}).join('');return`<div class="cal-day-col" data-day="${key}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="cdDrop(event)">${slots}${evts}${evtBlocks}</div>`}).join('');
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
 function calMode(m){calView=m;calOff=0;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day',month:'cal-btn-month'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
+/* ═══ CALENDAR EVENTS ═══ */
+function openEventModal(date,hour){
+  const m=document.getElementById('event-modal');if(!m)return;
+  document.getElementById('fe-title').value='';
+  document.getElementById('fe-date').value=date||dateKey(new Date());
+  document.getElementById('fe-hour').value=hour!=null?hour:9;
+  document.getElementById('fe-duration').value=60;
+  document.getElementById('fe-color').value='#3b82f6';
+  m.classList.add('open');
+  setTimeout(()=>document.getElementById('fe-title').focus(),50);
+}
+function closeEventModal(){document.getElementById('event-modal')?.classList.remove('open')}
+async function saveCalEvent(){
+  const title=document.getElementById('fe-title').value.trim();
+  if(!title){toast('Titre requis');return}
+  const date=document.getElementById('fe-date').value;
+  if(!date){toast('Date requise');return}
+  const startHour=parseInt(document.getElementById('fe-hour').value)||9;
+  const duration=parseInt(document.getElementById('fe-duration').value)||60;
+  const color=document.getElementById('fe-color').value||'#3b82f6';
+  const ev={id:null,title,date,startHour,duration,color};
+  const result=await insertCalEvent(ev);
+  if(result){calEvents.unshift(result);closeEventModal();renderCalendar();toast('Événement créé')}
+}
+async function deleteCalEvent(id){
+  const ok=await showConfirm('Supprimer cet événement ?');if(!ok)return;
+  await deleteCalEventDB(id);calEvents=calEvents.filter(e=>e.id!==id);renderCalendar();
+}
 /* ═══ CALENDAR DROPS ═══ */
 async function cdDrop(e){
   e.preventDefault();e.currentTarget.classList.remove('dragover');clearDragUI();
@@ -1215,7 +1243,11 @@ function onFoodSearch(val){
   if(!q||q.length<2){el.style.display='none';return}
   const matches=FOOD_DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,8);
   if(!matches.length){el.style.display='none';return}
-  el.innerHTML=matches.map(f=>`<div class="food-sugg-item" onclick="selectFood(${JSON.stringify(f.n)})">${escapeHtml(f.n)}<span>${f.k} cal/100g</span></div>`).join('');
+  /* data-name + mousedown évite le conflit de guillemets dans onclick et le blur de l'input */
+  el.innerHTML=matches.map(f=>`<div class="food-sugg-item" data-name="${escapeHtml(f.n)}">${escapeHtml(f.n)}<span>${f.k} cal/100g</span></div>`).join('');
+  el.querySelectorAll('.food-sugg-item').forEach(item=>{
+    item.addEventListener('mousedown',e=>{e.preventDefault();selectFood(item.dataset.name)});
+  });
   el.style.display='block';
 }
 
@@ -1517,7 +1549,7 @@ if(isMobile){calView='day'}
 initTouchDrag();
 
 (async function(){
-  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks(),loadPushupLog(),loadRunningLog(),loadSwimmingLog(),loadMeals(),loadWaterLog(),loadSavedMeals()]);
+  await Promise.all([loadTasks(),loadHabits(),loadNotes(),loadProjects(),loadProjectTasks(),loadPushupLog(),loadRunningLog(),loadSwimmingLog(),loadMeals(),loadWaterLog(),loadSavedMeals(),loadCalEvents()]);
   document.getElementById('loading-screen').classList.add('hidden');
   renderAll();
   if(isMobile){calMode('day')}

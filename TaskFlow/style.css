@@ -139,7 +139,12 @@ button,input,textarea,select{font-family:inherit}
 .cal-day-col:last-child{border-right:none}
 .cal-day-col.dragover{background:var(--orGlow)}
 .cal-hour-slot{height:48px;border-bottom:1px solid var(--brd)}
-.cal-evt{position:absolute;left:2px;right:2px;background:var(--or);border-radius:5px;padding:3px 6px;font-size:.67rem;color:#fff;font-weight:500;cursor:grab;z-index:2;overflow:hidden;border-left:3px solid var(--or3)}
+.cal-evt{position:absolute;left:2px;right:2px;background:var(--or);border-radius:5px;padding:3px 6px;font-size:.67rem;color:#fff;font-weight:500;cursor:grab;z-index:2;overflow:hidden;border-left:3px solid var(--or3);display:flex;align-items:center;justify-content:center;text-align:center}
+/* ══ CALENDAR EVENTS (non-tâches) ══ */
+.cal-event{position:absolute;left:2px;right:2px;border-radius:5px;padding:2px 4px 2px 8px;font-size:.67rem;color:#fff;font-weight:500;z-index:2;overflow:hidden;border-left:3px solid rgba(0,0,0,.2);display:flex;align-items:center;gap:2px}
+.cal-event span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-event-del{background:none;border:none;color:rgba(255,255,255,.75);cursor:pointer;font-size:.75rem;padding:0 2px;line-height:1;flex-shrink:0;min-height:unset}
+.cal-event-del:hover{color:#fff}
 
 /* ══ EISENHOWER ══ */
 .ei{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - var(--topbar-h))}
