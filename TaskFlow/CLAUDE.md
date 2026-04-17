@@ -1,22 +1,10 @@
-# Instructions Claude — Projet TaskFlow
+# Instructions — TaskFlow
 
-## Boot de session
-Ne lis les fichiers de contexte QUE si le message contient une intention de travail (tâche, bug, feature, question technique).
-Un simple greeting ne déclenche PAS le boot.
-
-Quand le boot est déclenché, lire dans l'ordre :
-1. tasks/tasks.md — tâches en cours
-2. tasks/lessons.md — erreurs passées à éviter
-
-Confirme avec : "Contexte chargé : TaskFlow — [X tâches en cours]"
+## Boot
+Ne charge le contexte QUE si intention de travail. Greeting = pas de boot.
+Si boot → lire via MCP obsidian : `Second Brain/Projects/TaskFlow/context.md`
+Confirme : "Contexte chargé : TaskFlow — [X tâches actives]"
 
 ## Self-improvement
-À chaque correction ou erreur détectée, ajouter dans tasks/lessons.md :
-[DATE] | ERREUR : ... | CAUSE : ... | RÈGLE : ...
-
-À chaque fin de session importante, mettre à jour brain/projects/taskflow.md.
-
-## Ressources projet
-- brain/projects/taskflow.md — décisions techniques et état d'avancement
-- brain/projects/mister-ia.md — contexte entreprise
-- brain/clients/ — interlocuteurs
+Erreur détectée → ajouter dans `Second Brain/Projects/TaskFlow/context.md` section Leçons : [DATE] | ERREUR | CAUSE | RÈGLE
+Fin de session importante → mettre à jour la section État du même fichier.

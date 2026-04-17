@@ -37,8 +37,19 @@ document.getElementById('theme-btn').onclick=()=>{theme=theme==='dark'?'light':'
 applyTheme();
 
 /* ═══ NAV ═══ */
-function switchView(v){
+async function switchView(v){
   if(document.querySelector('.modal-bg.open'))return;
+  if(activeView==='notes'&&v!=='notes'&&selectedNoteId){
+    if(selectedNoteId==='draft'){
+      const t=document.getElementById('n-title')?.value.trim(),c=document.getElementById('n-content')?.value;
+      if(t||c){const ok=await showConfirm('Note en cours non sauvegardée. Abandonner ?');if(!ok)return}
+    } else {
+      const cur=notes.find(x=>x.id===selectedNoteId);
+      if(cur&&(document.getElementById('n-title')?.value.trim()!==cur.title||document.getElementById('n-content')?.value!==cur.content)){
+        const ok=await showConfirm('Modifications non sauvegardées. Continuer quand même ?');if(!ok)return
+      }
+    }
+  }
   activeView=v;
   document.querySelectorAll('#vnav button').forEach(x=>x.classList.remove('act'));
   document.querySelectorAll('#bnav .bnav-btn').forEach(x=>x.classList.remove('act'));
@@ -502,7 +513,11 @@ function renderCalendar(){
   document.getElementById('cal-body').innerHTML=`<div class="cal-time-col">${timeCol}</div><div class="cal-days-wrap">${dayCols}</div>`;
 }
 function calNav(dir){calOff+=dir;renderCalendar()}
-function calMode(m){calView=m;calOff=0;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day',month:'cal-btn-month'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
+function calMode(m){
+  if(calView==='week'&&m==='day')calOff=calOff*7;
+  else if(calView==='day'&&m==='week')calOff=Math.floor(calOff/7);
+  else calOff=0;
+  calView=m;document.querySelectorAll('.cal-toolbar button').forEach(b=>b.classList.remove('act'));const id={week:'cal-btn-sem',day:'cal-btn-day',month:'cal-btn-month'};document.getElementById(id[m])?.classList.add('act');renderCalendar()}
 /* ═══ CALENDAR EVENTS ═══ */
 function openEventModal(date,hour){
   const m=document.getElementById('event-modal');if(!m)return;
