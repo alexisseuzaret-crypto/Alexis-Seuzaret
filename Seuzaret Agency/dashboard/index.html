@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seuzaret Agency — Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login" style="display:none">
+  <h2>Dashboard</h2>
+  <input type="password" id="pw" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')login()">
+  <button onclick="login()">Accéder</button>
+</div>
+
+<div id="dashboard" style="display:none">
+  <h1>Seuzaret Agency — Pipeline</h1>
+
+  <div class="kpis">
+    <div class="kpi"><div class="value" id="kpi-generes">—</div><div class="label">Sites générés</div></div>
+    <div class="kpi"><div class="value" id="kpi-envoyes">—</div><div class="label">Emails envoyés</div></div>
+    <div class="kpi"><div class="value" id="kpi-payes">—</div><div class="label">Ventes</div></div>
+    <div class="kpi"><div class="value" id="kpi-mrr">—</div><div class="label">MRR</div></div>
+  </div>
+
+  <div class="filters">
+    <select id="f-statut" onchange="filterTable()">
+      <option value="">Tous les statuts</option>
+      <option value="genere">Généré</option>
+      <option value="envoye">Envoyé</option>
+      <option value="ouvert">Ouvert</option>
+      <option value="clique">Cliqué</option>
+      <option value="repondu">Répondu</option>
+      <option value="paye">Payé</option>
+      <option value="livre">Livré</option>
+      <option value="annule">Annulé</option>
+    </select>
+    <select id="f-secteur" onchange="filterTable()">
+      <option value="">Tous les secteurs</option>
+      <option value="restaurant">Restaurant</option>
+      <option value="artisan">Artisan</option>
+      <option value="beaute">Beauté</option>
+    </select>
+    <input id="f-search" placeholder="Rechercher..." oninput="filterTable()">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nom</th><th>Secteur</th><th>Ville</th><th>Email</th>
+        <th>Site</th><th>Statut</th><th>Offre</th><th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
