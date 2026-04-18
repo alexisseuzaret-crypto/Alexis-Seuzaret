@@ -1,0 +1,10 @@
+# Projets personnels — ne pas commiter
+Second Brain/
+Outil Mister IA/
+
+# Fichiers sensibles
+*.bak
+.env
+.env.*
+!.env.example
+node_modules/
