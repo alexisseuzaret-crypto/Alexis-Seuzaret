@@ -1,6 +1,6 @@
 const SUPABASE_URL = 'https://npsawjqcncvothsrrmpc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wc2F3anFjbmN2b3Roc3JybXBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjU1NzUsImV4cCI6MjA5MjA0MTU3NX0.t0aCBFqTQzfqwxcrKHRUEsBrv3hZvKaWPCn-MWPrsRU';
-const DASHBOARD_PASSWORD = 'REPLACE_WITH_DASHBOARD_PASSWORD';
+const DASHBOARD_PASSWORD = 'seuzaret2026';
 
 let allProspects = [];
 
