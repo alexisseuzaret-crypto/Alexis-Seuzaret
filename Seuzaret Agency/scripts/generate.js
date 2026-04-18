@@ -45,6 +45,7 @@ STYLE REQUIS :
 - Aucune dépendance externe (pas de CDN, pas de JavaScript externe)
 - Utilise des dégradés CSS et formes géométriques, pas d'images externes
 
+IMPORTANT : Le CSS doit être concis et efficace (max 300 lignes). Priorise la complétion du fichier HTML entier plutôt qu'un CSS exhaustif.
 Retourne UNIQUEMENT le code HTML complet, sans aucune explication ni markdown.`;
 }
 
@@ -58,7 +59,7 @@ async function generateSite(prospect, sitesDir = path.join(__dirname, '../sites'
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 8192,
+    max_tokens: 16000,
     messages: [{ role: 'user', content: buildPrompt(prospect) }],
   });
 

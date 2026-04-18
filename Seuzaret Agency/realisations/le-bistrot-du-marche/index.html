@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Bistrot du Marché — Restaurant Traditionnel Paris 3ème</title>
+  <meta name="description" content="Le Bistrot du Marché, cuisine du marché faite maison par le chef Thomas Leclerc. Entrecôte, tartare, crème brûlée. 12 rue de Bretagne, Paris 3ème. Réservations : 01 42 71 89 23.">
+  <link rel="canonical" href="https://sa-demo-le-bistrot-du-marche.vercel.app">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Le Bistrot du Marché — Restaurant Paris 3ème">
+  <meta property="og:description" content="Cuisine du marché faite maison. Chef Thomas Leclerc. Rue de Bretagne, Paris Marais.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sa-demo-le-bistrot-du-marche.vercel.app">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Le Bistrot du Marché — Restaurant Paris 3ème">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Lora:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Restaurant",
+        "@id": "https://sa-demo-le-bistrot-du-marche.vercel.app/#restaurant",
+        "name": "Le Bistrot du Marché",
+        "image": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80",
+        "url": "https://sa-demo-le-bistrot-du-marche.vercel.app",
+        "telephone": "+33142718923",
+        "email": "contact@bistrotdumarche.fr",
+        "priceRange": "€€",
+        "servesCuisine": "French",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "12 rue de Bretagne",
+          "addressLocality": "Paris",
+          "postalCode": "75003",
+          "addressCountry": "FR"
+        },
+        "geo": { "@type": "GeoCoordinates", "latitude": 48.8630, "longitude": 2.3615 },
+        "openingHoursSpecification": [
+          { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "12:00", "closes": "22:30" }
+        ],
+        "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.8, "reviewCount": 287 },
+        "menu": "https://sa-demo-le-bistrot-du-marche.vercel.app/#menu",
+        "hasMap": "https://goo.gl/maps/example"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Peut-on réserver au Bistrot du Marché ?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Oui, les réservations sont recommandées, notamment le week-end. Réservez en ligne ou appelez le 01 42 71 89 23." }
+          },
+          {
+            "@type": "Question",
+            "name": "Quel est le prix d'un repas au Bistrot du Marché ?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Comptez en moyenne 40-50€ par personne avec une entrée, un plat et un dessert. Les plats vont de 22€ à 32€." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F5F1E8;
+      --cream2: #FAF6EF;
+      --dark: #1A1410;
+      --terra: #C4542D;
+      --forest: #2D4A3A;
+      --gold: #B8935F;
+      --muted: #7A6E64;
+      --border: #D8CEBE;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-body: 'Lora', Georgia, serif;
+      --font-detail: 'Cormorant Garamond', Georgia, serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--cream);
+      color: var(--dark);
+      font-family: var(--font-body);
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      padding: 24px 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: transparent;
+      transition: background 0.4s, padding 0.4s;
+    }
+    nav.scrolled {
+      background: rgba(245,241,232,0.95);
+      backdrop-filter: blur(8px);
+      padding: 16px 60px;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: var(--font-serif); font-size: 18px; font-weight: 400;
+      letter-spacing: 1px; color: var(--dark); text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a {
+      font-family: var(--font-detail); font-size: 14px; font-style: italic;
+      color: var(--muted); text-decoration: none; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--terra); }
+    .nav-reserve {
+      font-family: var(--font-body); font-size: 13px; font-weight: 500;
+      color: var(--cream); background: var(--terra);
+      padding: 10px 24px; text-decoration: none;
+      transition: background 0.3s;
+    }
+    .nav-reserve:hover { background: #a8441f; }
+
+    /* ORNAMENT */
+    .ornament {
+      display: flex; align-items: center; gap: 16px;
+      color: var(--gold); font-size: 11px; letter-spacing: 3px;
+      text-transform: uppercase; font-family: var(--font-detail);
+    }
+    .ornament::before, .ornament::after {
+      content: ''; flex: 1; height: 1px; background: var(--gold);
+    }
+
+    /* HERO */
+    .hero {
+      position: relative; height: 100vh; min-height: 650px;
+      display: flex; align-items: flex-end;
+    }
+    .hero-img {
+      position: absolute; inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1920&q=80');
+      background-size: cover; background-position: center 30%;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(26,20,16,0.85) 40%, rgba(26,20,16,0.1) 100%);
+    }
+    .hero-content {
+      position: relative; z-index: 2;
+      padding: 0 60px 80px; width: 100%;
+      display: flex; align-items: flex-end; justify-content: space-between;
+    }
+    .hero-left {}
+    .hero-eyebrow {
+      font-family: var(--font-detail); font-style: italic; font-size: 16px;
+      color: var(--gold); letter-spacing: 1px; display: block; margin-bottom: 12px;
+    }
+    .hero-title {
+      font-family: var(--font-serif); font-size: clamp(44px, 6vw, 80px);
+      font-weight: 700; line-height: 1.05;
+      color: var(--cream); letter-spacing: -1px;
+    }
+    .hero-title em { font-style: italic; font-weight: 400; color: var(--gold); }
+    .hero-sub {
+      font-family: var(--font-detail); font-style: italic;
+      font-size: 18px; color: rgba(245,241,232,0.7);
+      margin-top: 12px; letter-spacing: 0.5px;
+    }
+    .hero-right { text-align: right; }
+    .hero-info {
+      font-family: var(--font-detail); font-size: 13px; font-style: italic;
+      color: rgba(245,241,232,0.6); line-height: 1.9;
+    }
+    .hero-cta {
+      display: inline-block; margin-top: 20px;
+      font-family: var(--font-serif); font-size: 15px; font-style: italic;
+      color: var(--dark); background: var(--cream);
+      padding: 13px 32px; text-decoration: none;
+      transition: background 0.3s;
+    }
+    .hero-cta:hover { background: var(--gold); }
+
+    /* SECTIONS */
+    section { padding: 96px 60px; }
+    .section-label {
+      font-family: var(--font-detail); font-style: italic;
+      font-size: 13px; color: var(--terra); letter-spacing: 1px;
+      display: block; margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 400; line-height: 1.15;
+    }
+
+    /* REVEAL */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.delay-1 { transition-delay: 0.1s; }
+    .reveal.delay-2 { transition-delay: 0.22s; }
+    .reveal.delay-3 { transition-delay: 0.34s; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* HISTOIRE */
+    #histoire { background: var(--cream2); }
+    .histoire-inner { display: grid; grid-template-columns: 5fr 4fr; gap: 80px; align-items: center; }
+    .histoire-text .section-title { margin-bottom: 32px; }
+    .histoire-text p { font-size: 16px; line-height: 1.85; color: var(--muted); }
+    .histoire-text p + p { margin-top: 16px; }
+    .histoire-chef {
+      margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 20px;
+    }
+    .chef-photo {
+      width: 72px; height: 72px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+      border: 2px solid var(--gold);
+    }
+    .chef-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .chef-name { font-family: var(--font-serif); font-size: 18px; font-style: italic; }
+    .chef-role { font-family: var(--font-detail); font-size: 13px; color: var(--muted); }
+    .histoire-img { position: relative; }
+    .histoire-img img { width: 100%; display: block; }
+    .histoire-img-caption {
+      position: absolute; bottom: -16px; right: -16px;
+      background: var(--terra); color: var(--cream);
+      padding: 20px 24px;
+      font-family: var(--font-detail); font-style: italic; font-size: 14px;
+    }
+
+    /* MENU */
+    #menu { background: var(--cream); }
+    .menu-header { text-align: center; margin-bottom: 64px; }
+    .menu-header .section-title { font-size: clamp(40px, 5vw, 64px); }
+    .menu-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+    .menu-category {
+      padding: 48px 40px;
+      border-right: 1px solid var(--border);
+    }
+    .menu-category:last-child { border-right: none; }
+    .menu-cat-title {
+      font-family: var(--font-detail); font-size: 11px;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--terra);
+      margin-bottom: 32px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .menu-cat-title::before { content: '— '; }
+    .menu-item { margin-bottom: 20px; }
+    .menu-item-header {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    }
+    .menu-item-name {
+      font-family: var(--font-serif); font-size: 17px; font-weight: 400; font-style: italic;
+    }
+    .menu-item-dots {
+      flex: 1; border-bottom: 1px dotted var(--border); margin-bottom: 3px;
+    }
+    .menu-item-price {
+      font-family: var(--font-detail); font-size: 15px;
+      color: var(--terra); white-space: nowrap;
+    }
+    .menu-item-desc {
+      font-family: var(--font-detail); font-size: 13px; font-style: italic;
+      color: var(--muted); margin-top: 3px;
+    }
+    .menu-footer {
+      text-align: center; margin-top: 48px; padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .menu-footer p {
+      font-family: var(--font-detail); font-style: italic;
+      font-size: 14px; color: var(--muted);
+    }
+
+    /* GALERIE */
+    #galerie { background: var(--cream2); padding: 80px 60px; }
+    .galerie-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 260px 260px;
+      gap: 12px; margin-top: 48px;
+    }
+    .galerie-item { overflow: hidden; }
+    .galerie-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s; }
+    .galerie-item:hover img { transform: scale(1.05); }
+    .galerie-item:nth-child(1) { grid-column: span 2; }
+    .galerie-item:nth-child(4) { grid-column: span 2; }
+
+    /* AVIS */
+    #avis { background: var(--forest); color: var(--cream); }
+    #avis .section-label { color: var(--gold); }
+    #avis .section-title { color: var(--cream); margin-bottom: 48px; }
+    .avis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .avis-card {
+      background: rgba(245,241,232,0.07);
+      border: 1px solid rgba(245,241,232,0.12);
+      padding: 32px;
+    }
+    .avis-stars { color: var(--gold); font-size: 14px; letter-spacing: 3px; margin-bottom: 16px; }
+    .avis-text {
+      font-family: var(--font-body); font-style: italic; font-size: 15px;
+      color: rgba(245,241,232,0.85); line-height: 1.8; margin-bottom: 20px;
+    }
+    .avis-author {
+      font-family: var(--font-detail); font-size: 12px; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--gold);
+    }
+
+    /* RÉSERVATION */
+    #reservation { background: var(--cream); }
+    .reservation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+    .resa-info .section-title { margin-bottom: 24px; }
+    .resa-info p { font-size: 15px; color: var(--muted); line-height: 1.85; margin-bottom: 32px; }
+    .resa-contact-item {
+      display: flex; gap: 12px; align-items: center; margin-bottom: 12px;
+    }
+    .resa-contact-icon { color: var(--terra); font-size: 16px; width: 24px; text-align: center; }
+    .resa-contact-text { font-family: var(--font-body); font-size: 15px; }
+    .resa-contact-text a { color: var(--dark); text-decoration: none; }
+    .resa-contact-text a:hover { color: var(--terra); }
+    .resa-form label {
+      font-family: var(--font-detail); font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px;
+    }
+    .resa-form input, .resa-form select {
+      width: 100%; background: var(--cream2); border: 1px solid var(--border);
+      padding: 12px 16px; font-family: var(--font-body); font-size: 14px;
+      color: var(--dark); outline: none; margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    .resa-form input:focus, .resa-form select:focus { border-color: var(--terra); }
+    .resa-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .btn-resa {
+      width: 100%; padding: 15px;
+      font-family: var(--font-serif); font-style: italic; font-size: 18px;
+      color: var(--cream); background: var(--terra);
+      border: none; cursor: pointer; transition: background 0.3s;
+    }
+    .btn-resa:hover { background: #a8441f; }
+
+    /* FOOTER */
+    footer {
+      background: var(--dark); color: var(--cream);
+      padding: 64px 60px;
+    }
+    .footer-top {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px; margin-bottom: 48px;
+      padding-bottom: 48px; border-bottom: 1px solid rgba(245,241,232,0.1);
+    }
+    .footer-brand {
+      font-family: var(--font-serif); font-size: 28px; font-style: italic; font-weight: 400;
+      color: var(--cream); margin-bottom: 12px;
+    }
+    .footer-tagline {
+      font-family: var(--font-detail); font-style: italic;
+      font-size: 15px; color: var(--gold);
+    }
+    footer h4 {
+      font-family: var(--font-detail); font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--gold);
+      margin-bottom: 16px;
+    }
+    footer p, footer a {
+      font-size: 14px; color: rgba(245,241,232,0.65);
+      line-height: 1.9; text-decoration: none; display: block;
+    }
+    footer a:hover { color: var(--gold); }
+    .footer-bottom {
+      display: flex; justify-content: space-between;
+      font-family: var(--font-detail); font-size: 12px;
+      color: rgba(245,241,232,0.3); letter-spacing: 1px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .histoire-inner { grid-template-columns: 1fr; }
+      .histoire-img { display: none; }
+      .menu-columns { grid-template-columns: 1fr; }
+      .menu-category { border-right: none; border-bottom: 1px solid var(--border); }
+      .reservation-grid { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      nav { padding: 18px 24px; }
+      nav.scrolled { padding: 14px 24px; }
+      .nav-links { display: none; }
+      section { padding: 72px 24px; }
+      #galerie { padding: 72px 24px; }
+      .hero-content { padding: 0 24px 60px; flex-direction: column; gap: 24px; }
+      .hero-right { text-align: left; }
+      .galerie-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+      .galerie-item:nth-child(1), .galerie-item:nth-child(4) { grid-column: auto; }
+      .avis-grid { grid-template-columns: 1fr; }
+      .resa-form-row { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav id="nav">
+    <a href="#" class="nav-logo">Le Bistrot du Marché</a>
+    <ul class="nav-links">
+      <li><a href="#histoire">Notre histoire</a></li>
+      <li><a href="#menu">La carte</a></li>
+      <li><a href="#galerie">Galerie</a></li>
+      <li><a href="#avis">Avis</a></li>
+    </ul>
+    <a href="#reservation" class="nav-reserve">Réserver</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-img"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <span class="hero-eyebrow">Paris, 3ème arrondissement</span>
+        <h1 class="hero-title">La vraie cuisine<br>du <em>marché,</em><br>chaque jour</h1>
+        <p class="hero-sub">Bistrot parisien traditionnel depuis 2009</p>
+      </div>
+      <div class="hero-right">
+        <div class="hero-info">
+          Chef Thomas Leclerc<br>
+          Ancien de chez Taillevent<br>
+          <br>
+          Ouvert du mardi au samedi<br>
+          12h – 14h30 &amp; 19h – 22h30
+        </div>
+        <a href="#reservation" class="hero-cta">Réserver une table</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTOIRE -->
+  <section id="histoire">
+    <div class="histoire-inner">
+      <div class="histoire-text">
+        <span class="section-label reveal">Notre histoire</span>
+        <h2 class="section-title reveal">Un bistrot comme<br>il en existe peu</h2>
+        <p class="reveal delay-1">Niché au cœur du Marais, à deux pas du marché des Enfants Rouges, Le Bistrot du Marché naît d'une conviction simple : la meilleure cuisine est celle qui respecte les saisons et les producteurs.</p>
+        <p class="reveal delay-2">Thomas Leclerc a forgé son regard dans les grandes maisons parisiennes — quinze ans passés aux côtés des meilleurs chefs — avant de rentrer aux sources. Ici, pas de fioritures inutiles. Juste le produit, sublimé.</p>
+        <p class="reveal delay-2">Chaque matin, Thomas se rend au marché. Ce qui arrive dans l'assiette le soir n'a pas voyagé plus de 200 kilomètres. La carte change chaque semaine, au gré des arrivages.</p>
+        <div class="histoire-chef reveal delay-3">
+          <div class="chef-photo">
+            <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=150&h=150&q=80" alt="Chef Thomas Leclerc" width="72" height="72">
+          </div>
+          <div>
+            <div class="chef-name">Thomas Leclerc</div>
+            <div class="chef-role">Chef &amp; fondateur — Ancien de chez Taillevent</div>
+          </div>
+        </div>
+      </div>
+      <div class="histoire-img reveal delay-2">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1592861956120-e524fc739696?auto=format&fit=crop&w=600&q=80" alt="Le chef Thomas Leclerc en cuisine" width="600" height="800">
+        <div class="histoire-img-caption">Le marché, chaque matin.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU -->
+  <section id="menu">
+    <div class="menu-header">
+      <div class="ornament reveal">La Carte</div>
+      <h2 class="section-title reveal" style="margin-top:16px;">Au fil des saisons</h2>
+      <p class="reveal delay-1" style="font-family:var(--font-detail);font-style:italic;font-size:15px;color:var(--muted);margin-top:12px;">Carte renouvelée chaque semaine · Tous prix TTC · Service compris</p>
+    </div>
+    <div class="menu-columns reveal delay-2">
+      <div class="menu-category">
+        <div class="menu-cat-title">Entrées</div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Œuf parfait, crème de cèpes, truffe noire</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">18 €</span>
+          </div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Tartare de bœuf charolais au couteau</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">16 €</span>
+          </div>
+          <div class="menu-item-desc">frites maison</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Velouté de topinambour</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">14 €</span>
+          </div>
+          <div class="menu-item-desc">huile de noisette</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Foie gras maison, chutney de figues</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">19 €</span>
+          </div>
+          <div class="menu-item-desc">brioche toastée</div>
+        </div>
+      </div>
+      <div class="menu-category">
+        <div class="menu-cat-title">Plats</div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Entrecôte Black Angus, sauce poivre</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">32 €</span>
+          </div>
+          <div class="menu-item-desc">gratin dauphinois maison</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Filet de Saint-Pierre, beurre blanc</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">28 €</span>
+          </div>
+          <div class="menu-item-desc">légumes de saison</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Suprême de volaille fermière</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">24 €</span>
+          </div>
+          <div class="menu-item-desc">jus corsé, purée maison</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Risotto aux champignons de Paris</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">22 €</span>
+          </div>
+          <div class="menu-item-desc">parmesan 24 mois</div>
+        </div>
+      </div>
+      <div class="menu-category">
+        <div class="menu-cat-title">Desserts</div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Crème brûlée</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">9 €</span>
+          </div>
+          <div class="menu-item-desc">vanille de Madagascar</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Tarte Tatin tiède</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">10 €</span>
+          </div>
+          <div class="menu-item-desc">glace vanille artisanale</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Moelleux au chocolat Valrhona</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">10 €</span>
+          </div>
+          <div class="menu-item-desc">sorbet cassis</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-header">
+            <span class="menu-item-name">Île flottante, caramel beurre salé</span>
+            <span class="menu-item-dots"></span>
+            <span class="menu-item-price">8 €</span>
+          </div>
+        </div>
+        <div class="menu-footer">
+          <p>Formule déjeuner (entrée + plat ou plat + dessert) : 28 €</p>
+          <p style="margin-top:6px;">Menu complet (E + P + D) : 38 €</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALERIE -->
+  <section id="galerie">
+    <span class="section-label reveal">Atmosphère</span>
+    <h2 class="section-title reveal">La salle,<br>les assiettes</h2>
+    <div class="galerie-grid">
+      <div class="galerie-item reveal delay-1">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80" alt="Salle du Bistrot du Marché" width="800" height="520">
+      </div>
+      <div class="galerie-item reveal delay-2">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=400&q=80" alt="Tartare de bœuf" width="400" height="260">
+      </div>
+      <div class="galerie-item reveal delay-3">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80" alt="Plat du chef" width="400" height="260">
+      </div>
+      <div class="galerie-item reveal delay-2">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=800&q=80" alt="Verre de vin rouge" width="800" height="260">
+      </div>
+      <div class="galerie-item reveal delay-3">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80" alt="Cuisine du Bistrot" width="400" height="260">
+      </div>
+      <div class="galerie-item reveal delay-3">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80" alt="Dessert crème brûlée" width="400" height="260">
+      </div>
+    </div>
+  </section>
+
+  <!-- AVIS -->
+  <section id="avis">
+    <span class="section-label reveal">Ce que disent nos clients</span>
+    <h2 class="section-title reveal">4.8 / 5 sur 287 avis</h2>
+    <div class="avis-grid" style="margin-top:48px;">
+      <div class="avis-card reveal delay-1">
+        <div class="avis-stars">★★★★★</div>
+        <p class="avis-text">« Le meilleur tartare que j'ai mangé à Paris. La viande est d'une qualité remarquable et la sauce poivre de l'entrecôte mérite à elle seule le détour. Ambiance chaleureuse et service attentionné. »</p>
+        <div class="avis-author">Pierre-Antoine M. — Octobre 2025</div>
+      </div>
+      <div class="avis-card reveal delay-2">
+        <div class="avis-stars">★★★★★</div>
+        <p class="avis-text">« Un vrai bistrot comme on les aime. Produits frais, cuisson parfaite, accueil sincère. Thomas est passé en salle pour nous expliquer la carte du jour. Ce genre d'endroit se fait rare. »</p>
+        <div class="avis-author">Hélène B. — Décembre 2025</div>
+      </div>
+      <div class="avis-card reveal delay-3">
+        <div class="avis-stars">★★★★★</div>
+        <p class="avis-text">« On y revient chaque semaine depuis deux ans. La carte change régulièrement, la qualité reste toujours au rendez-vous. La crème brûlée est divine. Une adresse de quartier indispensable. »</p>
+        <div class="avis-author">Jacques &amp; Marianne F. — Janvier 2026</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RÉSERVATION -->
+  <section id="reservation">
+    <div class="reservation-grid">
+      <div class="resa-info">
+        <span class="section-label reveal">Réservation</span>
+        <h2 class="section-title reveal">Réservez<br>votre table</h2>
+        <p class="reveal delay-1">Nous accueillons les réservations jusqu'à la veille pour le déjeuner, et jusqu'au jour même avant 18h pour le dîner. Groupes de plus de 8 personnes sur devis.</p>
+        <div class="reveal delay-2">
+          <div class="resa-contact-item">
+            <span class="resa-contact-icon">☎</span>
+            <div class="resa-contact-text"><a href="tel:+33142718923">01 42 71 89 23</a></div>
+          </div>
+          <div class="resa-contact-item">
+            <span class="resa-contact-icon">✉</span>
+            <div class="resa-contact-text"><a href="mailto:contact@bistrotdumarche.fr">contact@bistrotdumarche.fr</a></div>
+          </div>
+          <div class="resa-contact-item">
+            <span class="resa-contact-icon">📍</span>
+            <div class="resa-contact-text">12 rue de Bretagne, 75003 Paris</div>
+          </div>
+        </div>
+      </div>
+      <form class="resa-form reveal delay-1" onsubmit="return false;">
+        <div class="resa-form-row">
+          <div>
+            <label for="prenom">Prénom</label>
+            <input type="text" id="prenom" placeholder="Jean">
+          </div>
+          <div>
+            <label for="phone">Téléphone</label>
+            <input type="tel" id="phone" placeholder="06 00 00 00 00">
+          </div>
+        </div>
+        <div class="resa-form-row">
+          <div>
+            <label for="rdate">Date</label>
+            <input type="date" id="rdate">
+          </div>
+          <div>
+            <label for="heure">Heure</label>
+            <select id="heure">
+              <option>12h00</option><option>12h30</option><option>13h00</option>
+              <option>13h30</option><option>19h00</option><option>19h30</option>
+              <option>20h00</option><option>20h30</option><option>21h00</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="couverts">Nombre de couverts</label>
+          <select id="couverts">
+            <option>1 personne</option><option>2 personnes</option>
+            <option>3 personnes</option><option>4 personnes</option>
+            <option>5 personnes</option><option>6+ personnes</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-resa" style="margin-top:8px;">Réserver une table</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">Le Bistrot du Marché</div>
+        <div class="footer-tagline">La vraie cuisine du marché, chaque jour</div>
+      </div>
+      <div>
+        <h4>Adresse</h4>
+        <p>12 rue de Bretagne<br>75003 Paris</p>
+        <p style="margin-top:8px;">Métro Filles du Calvaire</p>
+      </div>
+      <div>
+        <h4>Horaires</h4>
+        <p>Mar – Sam : 12h–14h30<br>Mar – Sam : 19h–22h30</p>
+        <p style="margin-top:8px;color:rgba(245,241,232,0.35);">Dim &amp; Lun : fermé</p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <a href="tel:+33142718923">01 42 71 89 23</a>
+        <a href="mailto:contact@bistrotdumarche.fr" style="margin-top:4px;">contact@bistrotdumarche.fr</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Le Bistrot du Marché</span>
+      <span>Site réalisé par <a href="https://seuzaret-agency.vercel.app" style="color:var(--gold);text-decoration:none;">Seuzaret Agency</a></span>
+    </div>
+  </footer>
+
+  <script>
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 40), { passive: true });
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

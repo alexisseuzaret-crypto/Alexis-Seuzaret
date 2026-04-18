@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seuzaret Agency — Création de sites web professionnels pour TPE et PME</title>
+  <title>Seuzaret Agency, Création de sites web professionnels pour TPE et PME</title>
   <meta name="description" content="Seuzaret Agency crée des sites web professionnels pour les TPE et PME françaises. Site vitrine, SEO et GEO. Livraison en 7 jours. À partir de 499€.">
   <meta name="keywords" content="création site web, site vitrine, TPE PME, SEO, GEO, agence web France, site internet professionnel">
-  <meta property="og:title" content="Seuzaret Agency — Création de sites web professionnels">
+  <meta property="og:title" content="Seuzaret Agency, Création de sites web professionnels">
   <meta property="og:description" content="Sites web professionnels pour TPE et PME françaises. Vitrine, SEO et GEO. Livraison 7 jours. À partir de 499€.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://seuzaret-agency.com">
   <meta property="og:locale" content="fr_FR">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Seuzaret Agency — Création de sites web professionnels">
+  <meta name="twitter:title" content="Seuzaret Agency, Création de sites web professionnels">
   <meta name="twitter:description" content="Sites web professionnels pour TPE et PME françaises. Livraison 7 jours.">
   <link rel="canonical" href="https://seuzaret-agency.com">
   <script type="application/ld+json">
@@ -39,7 +39,7 @@
         "@id": "https://seuzaret-agency.com/#website",
         "url": "https://seuzaret-agency.com",
         "name": "Seuzaret Agency",
-        "description": "Création de sites web professionnels pour TPE et PME françaises — vitrine, SEO et GEO",
+        "description": "Création de sites web professionnels pour TPE et PME françaises, vitrine, SEO et GEO",
         "publisher": { "@id": "https://seuzaret-agency.com/#organization" }
       },
       {
@@ -53,14 +53,14 @@
         "@type": "Service",
         "name": "Site Vitrine + SEO",
         "provider": { "@id": "https://seuzaret-agency.com/#organization" },
-        "description": "Site vitrine avec optimisation SEO complète pour Google — balises meta, schema.org, mots-clés métier",
+        "description": "Site vitrine avec optimisation SEO complète pour Google, balises meta, schema.org, mots-clés métier",
         "offers": { "@type": "Offer", "price": "599", "priceCurrency": "EUR" }
       },
       {
         "@type": "Service",
         "name": "Site Vitrine + SEO + GEO",
         "provider": { "@id": "https://seuzaret-agency.com/#organization" },
-        "description": "Site vitrine avec SEO et GEO — optimisation pour les IA conversationnelles ChatGPT et Perplexity",
+        "description": "Site vitrine avec SEO et GEO, optimisation pour les IA conversationnelles ChatGPT et Perplexity",
         "offers": { "@type": "Offer", "price": "649", "priceCurrency": "EUR" }
       },
       {
@@ -112,11 +112,112 @@
     html { scroll-behavior: smooth; }
 
     body {
-      background: var(--bg);
+      background: linear-gradient(180deg,
+        #0a0a14 0%,
+        #0f0a1e 20%,
+        #1a0f2e 40%,
+        #0f0a1e 60%,
+        #0a0a14 80%,
+        #05050a 100%);
+      background-attachment: fixed;
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       line-height: 1.6;
       overflow-x: hidden;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* Toutes les sections transparentes pour laisser passer le fond */
+    section, footer {
+      position: relative;
+      z-index: 1;
+      background: transparent !important;
+    }
+
+    /* FOND LUMINEUX */
+    .light-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .light-ray {
+      position: absolute;
+      top: -20%;
+      width: 2px;
+      height: 140%;
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(165, 180, 252, 0) 10%,
+        rgba(139, 92, 246, 0.4) 50%,
+        rgba(165, 180, 252, 0) 90%,
+        transparent 100%);
+      filter: blur(1px);
+      opacity: 0.6;
+      animation: ray-travel 12s ease-in-out infinite;
+    }
+    .light-ray-1 { left: 15%; animation-duration: 14s; }
+    .light-ray-2 {
+      left: 38%; animation-delay: -3s; animation-duration: 18s;
+      background: linear-gradient(180deg, transparent 0%, rgba(129,140,248,0) 10%, rgba(99,102,241,0.5) 50%, rgba(129,140,248,0) 90%, transparent 100%);
+    }
+    .light-ray-3 { left: 62%; animation-delay: -7s; animation-duration: 16s; }
+    .light-ray-4 {
+      left: 85%; animation-delay: -10s; animation-duration: 20s;
+      background: linear-gradient(180deg, transparent 0%, rgba(167,139,250,0) 10%, rgba(147,51,234,0.45) 50%, rgba(167,139,250,0) 90%, transparent 100%);
+    }
+    @keyframes ray-travel {
+      0%, 100% { transform: translateY(0) scaleY(1); opacity: 0.3; }
+      50% { transform: translateY(-5%) scaleY(1.1); opacity: 0.7; }
+    }
+
+    .light-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      will-change: transform;
+      animation: orb-float 20s ease-in-out infinite;
+    }
+    .light-orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, rgba(99,102,241,0) 70%);
+      top: 10%; left: -10%;
+      animation-duration: 22s;
+    }
+    .light-orb-2 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(139,92,246,0.35) 0%, rgba(139,92,246,0) 70%);
+      top: 50%; right: -15%;
+      animation-delay: -8s; animation-duration: 26s;
+    }
+    .light-orb-3 {
+      width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(167,139,250,0.3) 0%, rgba(167,139,250,0) 70%);
+      bottom: 5%; left: 35%;
+      animation-delay: -15s; animation-duration: 24s;
+    }
+    @keyframes orb-float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(80px, 60px) scale(1.15); }
+      66% { transform: translate(-40px, 100px) scale(0.9); }
+    }
+
+    .noise-overlay {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      mix-blend-mode: overlay;
+    }
+
+    @media (max-width: 768px) {
+      .light-orb { filter: blur(50px); }
+      .light-orb-1, .light-orb-2, .light-orb-3 { width: 300px; height: 300px; }
+      .light-ray { opacity: 0.4; }
+      .light-ray-4 { display: none; }
     }
 
     /* ANIMATIONS */
@@ -130,6 +231,10 @@
     .delay-2 { transition-delay: 0.2s; }
     .delay-3 { transition-delay: 0.3s; }
     .delay-4 { transition-delay: 0.4s; }
+    @media (prefers-reduced-motion: reduce) {
+      .animate { opacity: 1; transform: none; transition: none; }
+      .light-ray, .light-orb { animation: none; }
+    }
 
     /* NAV */
     nav {
@@ -264,12 +369,7 @@
       padding: 4px 16px; border-radius: 100px;
       font-size: 12px; font-weight: 700; white-space: nowrap;
     }
-    .offre-icon {
-      width: 50px; height: 50px; background: var(--accent-glow);
-      border: 1px solid rgba(99,102,241,0.2); border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; margin-bottom: 24px;
-    }
+    .offre-icon { display: block; }
     .offre-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.3px; }
     .offre-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
     .offre-list li {
@@ -298,9 +398,39 @@
     .prix-table tr:last-child td { border-bottom: none; }
     .prix-montant { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; display: block; }
     .prix-mensuel { font-size: 14px; color: var(--accent); font-weight: 600; display: block; }
-    .col-featured { background: rgba(99,102,241,0.05); }
+    .col-featured {
+      background: rgba(99,102,241,0.08);
+      border-left: 1px solid rgba(99,102,241,0.25);
+      border-right: 1px solid rgba(99,102,241,0.25);
+    }
+    .col-featured th, .prix-table th.col-featured {
+      color: #a5b4fc;
+      position: relative;
+    }
+    .price-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 6px;
+      box-shadow: 0 0 14px rgba(99,102,241,0.5);
+    }
     .prix-note { text-align: center; margin-top: 24px; color: var(--muted); font-size: 14px; line-height: 1.8; }
     .prix-cta { text-align: center; margin-top: 36px; }
+    .price-guarantees {
+      display: flex; justify-content: center; gap: 32px;
+      flex-wrap: wrap; margin-top: 28px;
+    }
+    .guarantee-item {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--muted); font-size: 13px;
+    }
+    .guarantee-item [data-lucide] { width: 16px; height: 16px; color: var(--accent); }
 
     /* PROCESS */
     #process { background: var(--bg); }
@@ -309,55 +439,190 @@
       gap: 24px;
     }
     .process-card {
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 16px; padding: 32px;
-      transition: border-color 0.25s, transform 0.25s;
+      background: rgba(20, 20, 30, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      border-radius: 16px; padding: 32px 28px;
+      transition: all 0.4s ease;
+      position: relative; overflow: hidden;
     }
-    .process-card:hover { border-color: var(--accent); transform: translateY(-4px); }
-    .process-icon { font-size: 28px; margin-bottom: 18px; display: block; }
+    .process-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -20px rgba(99, 102, 241, 0.25);
+    }
+    .process-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.6), transparent);
+      opacity: 0; transition: opacity 0.4s ease;
+    }
+    .process-card:hover::before { opacity: 1; }
+    .process-card-number {
+      position: absolute; top: 16px; right: 20px;
+      font-size: 13px; color: rgba(165, 180, 252, 0.3);
+      font-weight: 500; letter-spacing: 1px;
+    }
     .process-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
     .process-desc { color: var(--muted); font-size: 14px; line-height: 1.7; }
 
-    /* RÉALISATIONS */
+    /* RÉALISATIONS, GRILLE */
     #realisations { background: var(--bg2); }
     .realisations-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 24px;
+      margin-top: 48px;
     }
     .realisation-card {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 16px; overflow: hidden;
-      transition: transform 0.25s, border-color 0.25s;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
     }
-    .realisation-card:hover { transform: translateY(-4px); border-color: var(--accent); }
-    .realisation-preview {
-      height: 180px; display: flex; align-items: center; justify-content: center;
-      font-size: 44px; position: relative;
+    .realisation-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-6px);
+      box-shadow: 0 24px 48px -16px rgba(99, 102, 241, 0.2);
     }
-    .realisation-preview.restaurant { background: linear-gradient(135deg, #1a0808 0%, #2d1010 100%); }
-    .realisation-preview.artisan    { background: linear-gradient(135deg, #080d1a 0%, #0f1a2d 100%); }
-    .realisation-preview.beaute     { background: linear-gradient(135deg, #150815 0%, #280d28 100%); }
-    .realisation-demo-badge {
-      position: absolute; top: 12px; right: 12px;
-      background: var(--accent); color: #fff;
-      padding: 3px 10px; border-radius: 100px;
-      font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+
+    /* Thumbnail CSS */
+    .card-thumb {
+      height: 200px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
     }
-    .realisation-info { padding: 24px; }
-    .realisation-sector {
-      font-size: 11px; font-weight: 700; color: var(--accent);
-      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+    .card-thumb::after {
+      content: 'Voir le site ↗';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.5);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity .25s;
+      backdrop-filter: blur(4px);
     }
-    .realisation-name { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-    .realisation-desc { color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
-    .btn-demo {
-      display: inline-block; padding: 9px 18px;
-      border: 1px solid var(--border); border-radius: 8px;
-      color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
-      transition: border-color 0.2s, color 0.2s;
+    .card-thumb:hover::after { opacity: 1; }
+
+    /* Bistrot, cream / terracotta */
+    .thumb-bistrot {
+      background: #F5F1E8;
     }
-    .btn-demo:not(.disabled):hover { border-color: var(--accent); color: var(--accent); }
-    .btn-demo.disabled { opacity: 0.35; pointer-events: none; cursor: not-allowed; }
+    .thumb-bistrot .t-nav {
+      height: 32px; background: #2D4A3A;
+      display: flex; align-items: center; padding: 0 16px; gap: 10px;
+    }
+    .thumb-bistrot .t-nav-logo {
+      font-size: 10px; font-weight: 700; color: #B8935F; letter-spacing: .08em;
+    }
+    .thumb-bistrot .t-hero {
+      height: 90px; background: linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),
+      url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=60') center/cover;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    }
+    .thumb-bistrot .t-hero-title {
+      font-size: 14px; font-weight: 700; color: #F5F1E8; letter-spacing: .06em; text-align: center;
+    }
+    .thumb-bistrot .t-hero-sub {
+      font-size: 9px; color: #B8935F; letter-spacing: .15em; text-transform: uppercase;
+    }
+
+    /* Maison Lumière, blanc / rose nude / or */
+    .thumb-lumiere {
+      background: #FEFCF9;
+    }
+    .thumb-lumiere .t-nav {
+      height: 32px; background: #FEFCF9; border-bottom: 1px solid #E8C5B8;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
+    }
+    .thumb-lumiere .t-nav-logo {
+      font-size: 10px; font-weight: 600; color: #3A2E28; letter-spacing: .12em;
+      font-style: italic;
+    }
+    .thumb-lumiere .t-nav-dot {
+      width: 22px; height: 2px; background: #C9A97E;
+    }
+    .thumb-lumiere .t-hero {
+      height: 90px; background: linear-gradient(rgba(254,252,249,.15),rgba(254,252,249,.15)),
+      url('https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=400&q=60') center/cover;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    }
+    .thumb-lumiere .t-hero-title {
+      font-size: 14px; font-weight: 300; color: #FEFCF9; letter-spacing: .2em; text-align: center;
+      font-style: italic;
+    }
+    .thumb-lumiere .t-hero-sub {
+      font-size: 8px; color: #C9A97E; letter-spacing: .2em; text-transform: uppercase;
+    }
+
+    /* Durand Menuiserie, ivoire / brun / ocre */
+    .thumb-menuiserie {
+      background: #F7F3EE;
+    }
+    .thumb-menuiserie .t-nav {
+      height: 32px; background: #2B1F14; border-bottom: 3px solid #C68B1F;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
+    }
+    .thumb-menuiserie .t-nav-logo {
+      font-size: 9px; font-weight: 700; color: #F7F3EE; letter-spacing: .1em; text-transform: uppercase;
+    }
+    .thumb-menuiserie .t-nav-cta {
+      font-size: 7px; font-weight: 700; color: #2B1F14; background: #C68B1F;
+      padding: 3px 7px; letter-spacing: .06em; text-transform: uppercase;
+    }
+    .thumb-menuiserie .t-hero {
+      height: 90px; background: #2B1F14;
+      display: flex; flex-direction: column; justify-content: center; padding: 0 14px; gap: 4px;
+    }
+    .thumb-menuiserie .t-hero-num { display: none; }
+    .thumb-menuiserie .t-hero-label {
+      font-size: 7px; color: #C68B1F; letter-spacing: .2em; text-transform: uppercase;
+    }
+    .thumb-menuiserie .t-hero-title {
+      font-size: 13px; font-weight: 700; color: #F7F3EE; text-transform: uppercase; letter-spacing: .06em;
+    }
+
+    /* Supprimer les blocs gris placeholder dans les thumbnails */
+    /* Étendre le hero pour remplir la hauteur */
+    .thumb-bistrot .t-hero,
+    .thumb-lumiere .t-hero,
+    .thumb-menuiserie .t-hero { flex: 1; height: auto; min-height: 120px; }
+
+    /* Card info */
+    .card-info { padding: 20px 24px; }
+    .card-sector {
+      font-size: 10px; font-weight: 700; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;
+    }
+    .card-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .card-desc { color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 18px; }
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .card-ville {
+      font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px;
+    }
+    .card-voir {
+      font-size: 12px; font-weight: 700; color: var(--accent);
+      text-decoration: none; letter-spacing: .05em;
+      display: flex; align-items: center; gap: 4px; transition: gap .2s;
+    }
+    .card-voir:hover { gap: 8px; }
+
+    @media (max-width: 900px) {
+      .realisations-grid { grid-template-columns: 1fr; }
+    }
 
     /* CONTACT */
     #contact { background: var(--bg); }
@@ -405,9 +670,43 @@
       .contact-blocks { flex-direction: column; align-items: center; }
       .contact-block { width: 100%; max-width: 320px; }
     }
+    /* LUCIDE ICONS */
+    [data-lucide] {
+      width: 24px; height: 24px;
+      stroke-width: 1.75;
+      color: #a5b4fc;
+      display: block;
+    }
+    .offre-card [data-lucide] {
+      width: 32px; height: 32px;
+      color: #818cf8;
+      margin-bottom: 24px;
+    }
+    .process-card [data-lucide] {
+      width: 28px; height: 28px;
+      color: #818cf8;
+      margin-bottom: 18px;
+      transition: transform 0.4s ease;
+    }
+    .process-card:hover [data-lucide] { transform: scale(1.15); }
+    .contact-block-icon [data-lucide] {
+      width: 28px; height: 28px;
+      margin: 0 auto 14px;
+    }
   </style>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+<div class="light-bg" aria-hidden="true">
+  <div class="light-ray light-ray-1"></div>
+  <div class="light-ray light-ray-2"></div>
+  <div class="light-ray light-ray-3"></div>
+  <div class="light-ray light-ray-4"></div>
+  <div class="light-orb light-orb-1"></div>
+  <div class="light-orb light-orb-2"></div>
+  <div class="light-orb light-orb-3"></div>
+  <div class="noise-overlay"></div>
+</div>
 
   <!-- NAV -->
   <nav id="nav">
@@ -428,10 +727,10 @@
     <div class="hero-content">
       <div class="hero-badge animate">
         <span class="hero-badge-dot"></span>
-        Agence disponible — livraison 7 jours
+        Agence disponible, livraison 7 jours
       </div>
       <h1 class="animate delay-1">Votre site internet,<br><em>livré en 7 jours.</em></h1>
-      <p class="hero-sub animate delay-2">Seuzaret Agency crée des sites professionnels pour les TPE et PME françaises — vitrine, SEO et GEO inclus selon votre formule.</p>
+      <p class="hero-sub animate delay-2">Seuzaret Agency crée des sites professionnels pour les TPE et PME françaises, vitrine, SEO et GEO inclus selon votre formule.</p>
       <div class="hero-actions animate delay-3">
         <a href="#offres" class="btn-primary">Voir nos offres</a>
         <a href="#contact" class="btn-secondary">Nous contacter</a>
@@ -449,7 +748,7 @@
       </div>
       <div class="offres-grid">
         <div class="offre-card animate delay-1">
-          <div class="offre-icon">🏠</div>
+          <div class="offre-icon"><i data-lucide="layout"></i></div>
           <div class="offre-title">Site Vitrine</div>
           <ul class="offre-list">
             <li>Design premium sur mesure</li>
@@ -459,7 +758,7 @@
           </ul>
         </div>
         <div class="offre-card animate delay-2">
-          <div class="offre-icon">📈</div>
+          <div class="offre-icon"><i data-lucide="trending-up"></i></div>
           <div class="offre-title">Site Vitrine + SEO</div>
           <ul class="offre-list">
             <li>Tout le Vitrine inclus</li>
@@ -471,7 +770,7 @@
         </div>
         <div class="offre-card recommended animate delay-3">
           <div class="offre-badge">Recommandé</div>
-          <div class="offre-icon">🤖</div>
+          <div class="offre-icon"><i data-lucide="sparkles"></i></div>
           <div class="offre-title">Site Vitrine + SEO + GEO</div>
           <ul class="offre-list">
             <li>Tout le SEO inclus</li>
@@ -497,7 +796,10 @@
             <tr>
               <th></th>
               <th>Vitrine</th>
-              <th class="col-featured">Vitrine + SEO</th>
+              <th class="col-featured">
+                <div class="price-badge">Le plus populaire</div>
+                <div>Vitrine + SEO</div>
+              </th>
               <th>Vitrine + SEO + GEO</th>
             </tr>
           </thead>
@@ -517,7 +819,12 @@
           </tbody>
         </table>
       </div>
-      <p class="prix-note animate">La maintenance inclut hébergement, mises à jour et support.<br>Résiliable à tout moment — site désactivé en fin de mois en cours.</p>
+      <p class="prix-note animate">La maintenance inclut hébergement, mises à jour et support.<br>Résiliable à tout moment, site désactivé en fin de mois en cours.</p>
+      <div class="price-guarantees animate">
+        <div class="guarantee-item"><i data-lucide="shield-check"></i><span>Paiement sécurisé Stripe</span></div>
+        <div class="guarantee-item"><i data-lucide="refresh-cw"></i><span>Maintenance résiliable à tout moment</span></div>
+        <div class="guarantee-item"><i data-lucide="clock"></i><span>Livraison garantie en 7 jours</span></div>
+      </div>
       <div class="prix-cta animate">
         <a href="#contact" class="btn-primary">Demander un devis gratuit</a>
       </div>
@@ -534,22 +841,26 @@
       </div>
       <div class="process-grid">
         <div class="process-card animate delay-1">
-          <span class="process-icon">📩</span>
+          <span class="process-card-number">01</span>
+          <i data-lucide="mail"></i>
           <div class="process-title">Démo par email</div>
           <p class="process-desc">On génère une maquette de votre futur site et on vous l'envoie directement. Vous voyez le résultat avant de payer quoi que ce soit.</p>
         </div>
         <div class="process-card animate delay-2">
-          <span class="process-icon">🎥</span>
+          <span class="process-card-number">02</span>
+          <i data-lucide="video"></i>
           <div class="process-title">Présentation en visio</div>
           <p class="process-desc">Vous préférez qu'on vous présente le projet en direct ? On organise un appel à votre convenance.</p>
         </div>
         <div class="process-card animate delay-3">
-          <span class="process-icon">✏️</span>
+          <span class="process-card-number">03</span>
+          <i data-lucide="pencil-ruler"></i>
           <div class="process-title">Sur mesure</div>
           <p class="process-desc">Un besoin spécifique ? On part de zéro avec vous pour construire exactement ce qu'il vous faut.</p>
         </div>
         <div class="process-card animate delay-4">
-          <span class="process-icon">⚡</span>
+          <span class="process-card-number">04</span>
+          <i data-lucide="zap"></i>
           <div class="process-title">Livraison 7 jours</div>
           <p class="process-desc">Quel que soit le mode choisi, votre site est en ligne en 7 jours maximum après validation.</p>
         </div>
@@ -564,43 +875,80 @@
         <span class="section-tag">Réalisations</span>
         <h2 class="section-title">Exemples de sites<br>créés</h2>
       </div>
-      <div class="realisations-grid">
-        <div class="realisation-card animate delay-1">
-          <div class="realisation-preview restaurant">
-            🍕
-            <span class="realisation-demo-badge">Démo</span>
+      <div class="realisations-grid animate">
+
+        <!-- Carte 1, Le Bistrot du Marché -->
+        <div class="realisation-card">
+          <div class="card-thumb thumb-bistrot" onclick="window.open('https://sa-demo-le-bistrot-du-marche.vercel.app','_blank')">
+            <div class="t-nav">
+              <span class="t-nav-logo">LE BISTROT DU MARCHÉ</span>
+            </div>
+            <div class="t-hero">
+              <div class="t-hero-title">Une cuisine du marché,<br>faite maison</div>
+              <div class="t-hero-sub">Paris · Bistrot traditionnel</div>
+            </div>
+            
           </div>
-          <div class="realisation-info">
-            <div class="realisation-sector">Restauration</div>
-            <div class="realisation-name">Le Bistrot du Marché</div>
-            <p class="realisation-desc">Site vitrine restaurant avec menu, horaires et contact. Design sombre et appétissant.</p>
-            <a href="https://sa-demo-le-bistrot-du-marche-ehvkdrze2.vercel.app" class="btn-demo" target="_blank">Voir le site →</a>
-          </div>
-        </div>
-        <div class="realisation-card animate delay-2">
-          <div class="realisation-preview artisan">
-            🔧
-            <span class="realisation-demo-badge">Démo</span>
-          </div>
-          <div class="realisation-info">
-            <div class="realisation-sector">Artisanat</div>
-            <div class="realisation-name">Dupont Plomberie</div>
-            <p class="realisation-desc">Site vitrine artisan avec services, zone d'intervention et contact rapide.</p>
-            <a href="https://sa-demo-dupont-plomberie-iuv9otk1b.vercel.app" class="btn-demo" target="_blank">Voir le site →</a>
-          </div>
-        </div>
-        <div class="realisation-card animate delay-3">
-          <div class="realisation-preview beaute">
-            💇
-            <span class="realisation-demo-badge">Démo</span>
-          </div>
-          <div class="realisation-info">
-            <div class="realisation-sector">Beauté & Bien-être</div>
-            <div class="realisation-name">Studio Lumière</div>
-            <p class="realisation-desc">Site vitrine salon de beauté avec prestations, galerie et prise de contact.</p>
-            <a href="https://sa-demo-studio-lumiere-5gkqchmb6.vercel.app" class="btn-demo" target="_blank">Voir le site →</a>
+          <div class="card-info">
+            <div class="card-sector">Restauration</div>
+            <div class="card-name">Le Bistrot du Marché</div>
+            <p class="card-desc">Restaurant parisien traditionnel. Menu carte imprimée, galerie, avis clients, réservation.</p>
+            <div class="card-footer">
+              <span class="card-ville"><i data-lucide="map-pin"></i>Paris 3e</span>
+              <a href="https://sa-demo-le-bistrot-du-marche.vercel.app" class="card-voir" target="_blank">Voir le site →</a>
+            </div>
           </div>
         </div>
+
+        <!-- Carte 2, Maison Lumière -->
+        <div class="realisation-card">
+          <div class="card-thumb thumb-lumiere" onclick="window.open('https://sa-demo-maison-lumiere.vercel.app','_blank')">
+            <div class="t-nav">
+              <span class="t-nav-logo">Maison Lumière</span>
+              <div class="t-nav-dot"></div>
+            </div>
+            <div class="t-hero">
+              <div class="t-hero-title">L'art du cheveu,<br>sublimé</div>
+              <div class="t-hero-sub">Bordeaux · Salon luxe</div>
+            </div>
+            
+          </div>
+          <div class="card-info">
+            <div class="card-sector">Beauté & Bien-être</div>
+            <div class="card-name">Maison Lumière</div>
+            <p class="card-desc">Salon de coiffure haut de gamme. Prestations luxe, galerie masonry, réservation en ligne.</p>
+            <div class="card-footer">
+              <span class="card-ville"><i data-lucide="map-pin"></i>Bordeaux</span>
+              <a href="https://sa-demo-maison-lumiere.vercel.app" class="card-voir" target="_blank">Voir le site →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carte 3, Durand Menuiserie -->
+        <div class="realisation-card">
+          <div class="card-thumb thumb-menuiserie" onclick="window.open('https://sa-demo-durand-menuiserie.vercel.app','_blank')">
+            <div class="t-nav">
+              <span class="t-nav-logo">DURAND <span style="color:#C68B1F">MENUISERIE</span></span>
+              <div class="t-nav-cta">DEVIS</div>
+            </div>
+            <div class="t-hero" style="position:relative">
+              <div class="t-hero-num">62</div>
+              <div class="t-hero-label">Rennes · depuis 1962</div>
+              <div class="t-hero-title">MENUISERIE ARTISANALE</div>
+            </div>
+            
+          </div>
+          <div class="card-info">
+            <div class="card-sector">Artisanat & Bâtiment</div>
+            <div class="card-name">Durand Menuiserie</div>
+            <p class="card-desc">Menuisier artisan 3e génération. Cuisines, escaliers, terrasses. Timeline historique, certifications.</p>
+            <div class="card-footer">
+              <span class="card-ville"><i data-lucide="map-pin"></i>Rennes</span>
+              <a href="https://sa-demo-durand-menuiserie.vercel.app" class="card-voir" target="_blank">Voir le site →</a>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -615,19 +963,19 @@
           <p class="section-sub" style="margin: 0 auto;">On vous répond dans la journée.</p>
         </div>
         <div class="contact-blocks">
-          <a href="mailto:alexis@seuzaret-agency.com?subject=Demande de devis — Seuzaret Agency" class="contact-block animate delay-1">
-            <span class="contact-block-icon">📧</span>
+          <a href="mailto:alexis@seuzaret-agency.com?subject=Demande de devis, Seuzaret Agency" class="contact-block animate delay-1">
+            <span class="contact-block-icon"><i data-lucide="mail"></i></span>
             <div class="contact-block-label">Email</div>
             <div class="contact-block-value">alexis@seuzaret-agency.com</div>
           </a>
           <a href="tel:+33764670791" class="contact-block animate delay-2">
-            <span class="contact-block-icon">📞</span>
+            <span class="contact-block-icon"><i data-lucide="phone"></i></span>
             <div class="contact-block-label">Téléphone</div>
             <div class="contact-block-value">07 64 67 07 91</div>
           </a>
         </div>
         <div class="animate delay-3">
-          <a href="mailto:alexis@seuzaret-agency.com?subject=Demande de devis — Seuzaret Agency" class="btn-primary">Envoyer un email</a>
+          <a href="mailto:alexis@seuzaret-agency.com?subject=Demande de devis, Seuzaret Agency" class="btn-primary">Envoyer un email</a>
         </div>
       </div>
     </div>
@@ -662,7 +1010,9 @@
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.animate').forEach(el => observer.observe(el));
+
   </script>
+  <script>lucide.createIcons();</script>
 
 </body>
 </html>

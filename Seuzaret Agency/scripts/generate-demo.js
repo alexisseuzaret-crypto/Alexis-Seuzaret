@@ -74,17 +74,44 @@ async function deployDemo(html, slug) {
   return `https://${response.data.url}`;
 }
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function generateWithRetry(demo, maxRetries = 5) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await generateSite(demo);
+    } catch (err) {
+      if (err.status === 429) {
+        const retryAfter = parseInt(err.headers?.get?.('retry-after') || '120', 10);
+        const wait = (retryAfter + 10) * 1000;
+        console.log(`  ⏳ Rate limit — attente ${retryAfter + 10}s (tentative ${attempt}/${maxRetries})…`);
+        await sleep(wait);
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error('Max retries atteint');
+}
+
 async function main() {
-  for (const demo of DEMOS) {
+  const filter = process.argv.slice(2);
+  const demosToRun = filter.length
+    ? DEMOS.filter(d => filter.some(f => d.nom.toLowerCase().includes(f) || d.secteur.toLowerCase().includes(f)))
+    : DEMOS;
+
+  for (let i = 0; i < demosToRun.length; i++) {
+    const demo = demosToRun[i];
     console.log(`\n→ Génération : ${demo.nom} (${demo.ville})`);
 
-    const { slug, html } = await generateSite(demo);
+    const { slug, html } = await generateWithRetry(demo);
     console.log(`  ✓ Site généré (${html.length} caractères)`);
 
     const url = await deployDemo(html, slug);
     console.log(`  ✓ Déployé : ${url}`);
 
-    console.log(`  DEMO_URL_${demo.secteur.includes('Restaurant') ? 'RESTAURANT' : demo.secteur.includes('Plomb') ? 'ARTISAN' : 'BEAUTE'} = ${url}`);
+    const key = demo.secteur.includes('Restaurant') ? 'RESTAURANT' : demo.secteur.includes('Plomb') ? 'ARTISAN' : 'BEAUTE';
+    console.log(`  DEMO_URL_${key} = ${url}`);
   }
 }
 
