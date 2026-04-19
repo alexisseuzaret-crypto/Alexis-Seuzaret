@@ -146,17 +146,17 @@
     .cursor-spotlight {
       position: fixed;
       top: 0; left: 0;
-      width: 600px; height: 600px;
+      width: 300px; height: 300px;
       border-radius: 50%;
       background: radial-gradient(circle at center,
-        rgba(139,92,246,0.25) 0%,
-        rgba(236,72,153,0.12) 30%,
-        transparent 70%);
+        rgba(139,92,246,0.55) 0%,
+        rgba(236,72,153,0.35) 30%,
+        transparent 65%);
       pointer-events: none;
       transform: translate(-50%, -50%);
       will-change: transform;
       z-index: 0;
-      filter: blur(20px);
+      filter: blur(10px);
       opacity: 0;
       transition: opacity 0.3s ease;
     }
@@ -262,6 +262,22 @@
     }
     .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
+    /* PROTECTION TEXTE — haze sombre derrière les zones de contenu */
+    .section-inner,
+    .realisations-header {
+      position: relative;
+    }
+    .hero-content::before,
+    .section-inner::before,
+    .realisations-header::before {
+      content: '';
+      position: absolute;
+      inset: -60px -80px;
+      background: radial-gradient(ellipse at center, rgba(3,0,8,0.65) 20%, transparent 72%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
     /* SECTIONS COMMUNES */
     section { padding: 100px 40px; }
     .section-inner { max-width: 1100px; margin: 0 auto; }
@@ -334,12 +350,6 @@
     }
     .offre-card:hover { border-color: var(--accent); transform: translateY(-4px); }
     .offre-card.recommended { border-color: rgba(99,102,241,0.5); }
-    .offre-badge {
-      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-      background: var(--accent); color: #fff;
-      padding: 4px 16px; border-radius: 100px;
-      font-size: 12px; font-weight: 700; white-space: nowrap;
-    }
     .offre-icon { display: block; }
     .offre-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.3px; }
     .offre-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
@@ -756,7 +766,6 @@
           </ul>
         </div>
         <div class="offre-card recommended animate delay-3">
-          <div class="offre-badge">Recommandé</div>
           <div class="offre-icon"><i data-lucide="sparkles"></i></div>
           <div class="offre-title">Site Vitrine + SEO + GEO</div>
           <ul class="offre-list">
@@ -1055,7 +1064,7 @@
       (function animate() {
         currentX += (mouseX - currentX) * 0.15;
         currentY += (mouseY - currentY) * 0.15;
-        spotlight.style.transform = `translate(${currentX - 300}px, ${currentY - 300}px)`;
+        spotlight.style.transform = `translate(${currentX - 150}px, ${currentY - 150}px)`;
         requestAnimationFrame(animate);
       })();
     })();
