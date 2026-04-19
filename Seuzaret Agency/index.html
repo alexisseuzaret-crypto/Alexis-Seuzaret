@@ -126,7 +126,6 @@
 
     section, header, main, footer { position: relative; z-index: 1; }
     section { background: transparent !important; }
-    #prix { background: #111111 !important; }
 
     /* FOND TRAÎNÉES */
     .light-bg {
@@ -368,8 +367,15 @@
     }
 
     /* PRIX */
-    #prix { background: var(--bg2); }
-    .prix-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    .prix-table-wrap {
+      overflow-x: auto;
+      background: rgba(15,10,30,0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: 20px;
+      padding: 40px;
+    }
     .prix-table { width: 100%; border-collapse: collapse; min-width: 500px; }
     .prix-table th, .prix-table td {
       padding: 20px 24px; text-align: center;
@@ -589,10 +595,10 @@
     }
     .contact-block {
       background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 16px; padding: 32px 40px;
+      border-radius: 16px; padding: 32px 28px;
       text-decoration: none; color: var(--text);
       transition: border-color 0.25s, transform 0.25s;
-      min-width: 210px; flex: 1; max-width: 280px;
+      min-width: 280px; flex: 1; max-width: 400px;
     }
     .contact-block:hover { border-color: var(--accent); transform: translateY(-3px); }
     .contact-block-icon { font-size: 28px; margin-bottom: 14px; display: block; }
@@ -601,11 +607,11 @@
       text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
     }
     .contact-block-value {
-      font-size: 15px; font-weight: 600; color: var(--text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 14px; font-weight: 600; color: var(--text);
+      white-space: nowrap;
     }
     @media (max-width: 480px) {
-      .contact-block-value { font-size: 12px; }
+      .contact-block-value { font-size: 12px; white-space: normal; word-break: break-all; }
     }
 
     /* FOOTER */
