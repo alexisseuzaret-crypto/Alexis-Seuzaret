@@ -109,118 +109,89 @@
       --accent-glow: rgba(99, 102, 241, 0.15);
     }
 
+    html, body { min-height: 100vh; }
     html { scroll-behavior: smooth; }
 
     body {
-      background: linear-gradient(180deg,
-        #0a0a14 0%,
-        #0f0a1e 20%,
-        #1a0f2e 40%,
-        #0f0a1e 60%,
-        #0a0a14 80%,
-        #05050a 100%);
-      background-attachment: fixed;
+      background: #030008;
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       line-height: 1.6;
       overflow-x: hidden;
       position: relative;
-      min-height: 100vh;
     }
 
-    /* Toutes les sections transparentes pour laisser passer le fond */
-    section, footer {
-      position: relative;
-      z-index: 1;
-      background: transparent !important;
-    }
+    section, header, main, footer { position: relative; z-index: 1; }
+    section { background: transparent !important; }
 
-    /* FOND LUMINEUX */
+    /* FOND TRAÎNÉES */
     .light-bg {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
       overflow: hidden;
       pointer-events: none;
     }
-
-    .light-ray {
+    .light-trails {
       position: absolute;
-      top: -20%;
-      width: 2px;
-      height: 140%;
-      background: linear-gradient(180deg,
-        transparent 0%,
-        rgba(165, 180, 252, 0) 10%,
-        rgba(139, 92, 246, 0.4) 50%,
-        rgba(165, 180, 252, 0) 90%,
-        transparent 100%);
-      filter: blur(1px);
-      opacity: 0.6;
-      animation: ray-travel 12s ease-in-out infinite;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
     }
-    .light-ray-1 { left: 15%; animation-duration: 14s; }
-    .light-ray-2 {
-      left: 38%; animation-delay: -3s; animation-duration: 18s;
-      background: linear-gradient(180deg, transparent 0%, rgba(129,140,248,0) 10%, rgba(99,102,241,0.5) 50%, rgba(129,140,248,0) 90%, transparent 100%);
-    }
-    .light-ray-3 { left: 62%; animation-delay: -7s; animation-duration: 16s; }
-    .light-ray-4 {
-      left: 85%; animation-delay: -10s; animation-duration: 20s;
-      background: linear-gradient(180deg, transparent 0%, rgba(167,139,250,0) 10%, rgba(147,51,234,0.45) 50%, rgba(167,139,250,0) 90%, transparent 100%);
-    }
-    @keyframes ray-travel {
-      0%, 100% { transform: translateY(0) scaleY(1); opacity: 0.3; }
-      50% { transform: translateY(-5%) scaleY(1.1); opacity: 0.7; }
-    }
+    .trail-outer { filter: blur(25px); }
+    .trail-mid   { filter: blur(4px); }
+    .trail-core  { filter: blur(0.5px); }
 
-    .light-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      will-change: transform;
-      animation: orb-float 20s ease-in-out infinite;
-    }
-    .light-orb-1 {
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, rgba(99,102,241,0) 70%);
-      top: 10%; left: -10%;
-      animation-duration: 22s;
-    }
-    .light-orb-2 {
+    /* SPOTLIGHT CURSEUR */
+    .cursor-spotlight {
+      position: fixed;
+      top: 0; left: 0;
       width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(139,92,246,0.35) 0%, rgba(139,92,246,0) 70%);
-      top: 50%; right: -15%;
-      animation-delay: -8s; animation-duration: 26s;
-    }
-    .light-orb-3 {
-      width: 450px; height: 450px;
-      background: radial-gradient(circle, rgba(167,139,250,0.3) 0%, rgba(167,139,250,0) 70%);
-      bottom: 5%; left: 35%;
-      animation-delay: -15s; animation-duration: 24s;
-    }
-    @keyframes orb-float {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(80px, 60px) scale(1.15); }
-      66% { transform: translate(-40px, 100px) scale(0.9); }
+      border-radius: 50%;
+      background: radial-gradient(circle at center,
+        rgba(139,92,246,0.25) 0%,
+        rgba(236,72,153,0.12) 30%,
+        transparent 70%);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      will-change: transform;
+      z-index: 0;
+      filter: blur(20px);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    .noise-overlay {
+    /* ÉTINCELLES */
+    .sparkles { position: absolute; inset: 0; pointer-events: none; }
+    .sparkle {
       position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-      opacity: 0.03;
-      mix-blend-mode: overlay;
+      width: 3px; height: 3px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px 2px rgba(255,255,255,0.8), 0 0 16px 4px rgba(236,72,153,0.4);
+      animation: sparkle-twinkle 4s ease-in-out infinite;
+    }
+    .sparkle:nth-child(2n) { animation-delay: -1s;  animation-duration: 5s; }
+    .sparkle:nth-child(3n) {
+      animation-delay: -2s; animation-duration: 3.5s;
+      box-shadow: 0 0 8px 2px rgba(255,255,255,0.8), 0 0 16px 4px rgba(167,139,250,0.4);
+    }
+    .sparkle:nth-child(5n) { animation-delay: -3s; animation-duration: 6s; }
+    @keyframes sparkle-twinkle {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50%       { opacity: 1;   transform: scale(1.2); }
     }
 
     @media (max-width: 768px) {
-      .light-orb { filter: blur(50px); }
-      .light-orb-1, .light-orb-2, .light-orb-3 { width: 300px; height: 300px; }
-      .light-ray { opacity: 0.4; }
-      .light-ray-4 { display: none; }
+      .cursor-spotlight { display: none; }
+      .trail-outer { filter: blur(18px); opacity: 0.1 !important; }
+      .sparkle { width: 2px; height: 2px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sparkle { animation: none; opacity: 0.5; }
     }
 
-    /* ANIMATIONS */
+    /* ANIMATIONS SCROLL */
     .animate {
       opacity: 0;
       transform: translateY(24px);
@@ -233,7 +204,7 @@
     .delay-4 { transition-delay: 0.4s; }
     @media (prefers-reduced-motion: reduce) {
       .animate { opacity: 1; transform: none; transition: none; }
-      .light-ray, .light-orb { animation: none; }
+      .sparkle { animation: none; opacity: 0.5; }
     }
 
     /* NAV */
@@ -466,162 +437,132 @@
     .process-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
     .process-desc { color: var(--muted); font-size: 14px; line-height: 1.7; }
 
-    /* RÉALISATIONS, GRILLE */
-    #realisations { background: var(--bg2); }
+    /* RÉALISATIONS */
+    .realisations-section { padding: 120px 5% 140px; position: relative; }
+    .realisations-header { max-width: 800px; margin-bottom: 80px; }
+    .realisations-header .section-label {
+      display: inline-block; color: #a78bfa; font-size: 13px; font-weight: 600;
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .realisations-header h2 {
+      font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 700; line-height: 1.1;
+      color: #ffffff; margin-bottom: 20px; letter-spacing: -1px;
+    }
+    .realisations-header .section-subtitle {
+      font-size: 1.1rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 600px;
+    }
     .realisations-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-top: 48px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+      max-width: 1600px; margin: 0 auto;
     }
     .realisation-card {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: pointer;
+      position: relative;
+      background: rgba(15,10,30,0.6);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(139,92,246,0.15);
+      border-radius: 20px; overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.22,1,0.36,1);
+      cursor: pointer; display: flex; flex-direction: column;
+    }
+    .realisation-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 20px; padding: 1px;
+      background: linear-gradient(135deg, rgba(236,72,153,0) 0%, rgba(139,92,246,0) 50%, rgba(236,72,153,0) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
     }
     .realisation-card:hover {
-      border-color: var(--accent);
-      transform: translateY(-6px);
-      box-shadow: 0 24px 48px -16px rgba(99, 102, 241, 0.2);
+      transform: translateY(-8px); border-color: rgba(139,92,246,0.4);
+      box-shadow: 0 30px 60px -20px rgba(139,92,246,0.3), 0 20px 40px -20px rgba(236,72,153,0.2);
     }
+    .realisation-card:hover::before {
+      opacity: 1;
+      background: linear-gradient(135deg, rgba(236,72,153,0.6) 0%, rgba(139,92,246,0.4) 50%, rgba(236,72,153,0.6) 100%);
+    }
+    .card-preview {
+      position: relative; width: 100%; aspect-ratio: 16/10;
+      overflow: hidden; border-radius: 20px 20px 0 0; background: #0a0510;
+    }
+    .card-iframe-wrapper { position: absolute; inset: 0; overflow: hidden; }
+    .card-iframe {
+      position: absolute; top: 0; left: 0;
+      width: 400%; height: 400%;
+      border: 0; transform: scale(0.25); transform-origin: top left;
+      pointer-events: none; background: #fff;
+      transition: transform 0.6s cubic-bezier(0.22,1,0.36,1);
+    }
+    .realisation-card:hover .card-iframe { transform: scale(0.27); }
+    .card-iframe-overlay {
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 60%, rgba(15,10,30,0.3) 100%);
+      pointer-events: none; transition: opacity 0.5s ease;
+    }
+    .realisation-card:hover .card-iframe-overlay { opacity: 0.5; }
+    .card-badge {
+      position: absolute; top: 16px; left: 16px; z-index: 2;
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+      background: rgba(10,5,20,0.85); backdrop-filter: blur(10px);
+      border: 1px solid rgba(139,92,246,0.3); border-radius: 100px;
+      font-size: 12px; font-weight: 600; color: #fff; letter-spacing: 0.5px;
+    }
+    .card-badge [data-lucide] { width: 14px; height: 14px; color: #ec4899; stroke-width: 2; }
+    .card-content { padding: 28px; display: flex; flex-direction: column; gap: 20px; position: relative; }
+    .card-main { transition: transform 0.5s cubic-bezier(0.22,1,0.36,1); }
+    .card-title { font-size: 1.5rem; font-weight: 700; color: #fff; margin: 0 0 10px; letter-spacing: -0.5px; }
+    .card-desc { font-size: 0.95rem; color: rgba(255,255,255,0.65); line-height: 1.5; margin: 0 0 16px; }
+    .card-meta { display: flex; align-items: center; gap: 16px; }
+    .card-location { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: rgba(255,255,255,0.5); }
+    .card-location [data-lucide] { width: 14px; height: 14px; color: #a78bfa; stroke-width: 2; }
+    .card-reveal {
+      display: flex; flex-direction: column; gap: 16px;
+      max-height: 0; opacity: 0; overflow: hidden;
+      transition: max-height 0.6s cubic-bezier(0.22,1,0.36,1), opacity 0.4s ease, margin 0.5s ease;
+      margin-top: 0; padding-top: 0; border-top: 1px solid rgba(139,92,246,0);
+    }
+    .realisation-card:hover .card-reveal {
+      max-height: 500px; opacity: 1; margin-top: 16px; padding-top: 20px;
+      border-top: 1px solid rgba(139,92,246,0.2);
+    }
+    .reveal-section { display: flex; flex-direction: column; gap: 6px; }
+    .reveal-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #ec4899; }
+    .reveal-value { font-size: 0.9rem; color: rgba(255,255,255,0.8); line-height: 1.5; }
+    .reveal-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+    .reveal-list li {
+      display: inline-block; padding: 4px 10px;
+      background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 100px; font-size: 0.8rem; color: rgba(255,255,255,0.85);
+    }
+    .card-cta {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 14px 24px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+      color: #fff; text-decoration: none; border-radius: 12px;
+      font-weight: 600; font-size: 0.95rem; letter-spacing: 0.2px;
+      transition: all 0.4s cubic-bezier(0.22,1,0.36,1);
+      position: relative; overflow: hidden;
+      box-shadow: 0 8px 24px -8px rgba(139,92,246,0.5);
+      margin-top: auto; align-self: stretch;
+    }
+    .card-cta::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+      opacity: 0; transition: opacity 0.4s ease;
+    }
+    .card-cta > * { position: relative; z-index: 1; }
+    .card-cta [data-lucide] { width: 18px; height: 18px; stroke-width: 2.25; transition: transform 0.4s ease; }
+    .realisation-card:hover .card-cta { box-shadow: 0 12px 32px -8px rgba(236,72,153,0.6); }
+    .realisation-card:hover .card-cta::before { opacity: 1; }
+    .realisation-card:hover .card-cta [data-lucide] { transform: translate(3px,-3px); }
 
-    /* Thumbnail CSS */
-    .card-thumb {
-      height: 200px;
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
+    @media (max-width: 1200px) { .realisations-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 700px) {
+      .realisations-section { padding: 80px 5% 100px; }
+      .realisations-header { margin-bottom: 48px; }
+      .realisations-grid { grid-template-columns: 1fr; gap: 24px; }
+      .card-content { padding: 20px; }
+      .card-reveal { max-height: 500px; opacity: 1; margin-top: 16px; padding-top: 20px; border-top: 1px solid rgba(139,92,246,0.2); }
     }
-    .card-thumb::after {
-      content: 'Voir le site ↗';
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,.5);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      opacity: 0;
-      transition: opacity .25s;
-      backdrop-filter: blur(4px);
-    }
-    .card-thumb:hover::after { opacity: 1; }
-
-    /* Bistrot, cream / terracotta */
-    .thumb-bistrot {
-      background: #F5F1E8;
-    }
-    .thumb-bistrot .t-nav {
-      height: 32px; background: #2D4A3A;
-      display: flex; align-items: center; padding: 0 16px; gap: 10px;
-    }
-    .thumb-bistrot .t-nav-logo {
-      font-size: 10px; font-weight: 700; color: #B8935F; letter-spacing: .08em;
-    }
-    .thumb-bistrot .t-hero {
-      height: 90px; background: linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),
-      url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=60') center/cover;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-    }
-    .thumb-bistrot .t-hero-title {
-      font-size: 14px; font-weight: 700; color: #F5F1E8; letter-spacing: .06em; text-align: center;
-    }
-    .thumb-bistrot .t-hero-sub {
-      font-size: 9px; color: #B8935F; letter-spacing: .15em; text-transform: uppercase;
-    }
-
-    /* Maison Lumière, blanc / rose nude / or */
-    .thumb-lumiere {
-      background: #FEFCF9;
-    }
-    .thumb-lumiere .t-nav {
-      height: 32px; background: #FEFCF9; border-bottom: 1px solid #E8C5B8;
-      display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
-    }
-    .thumb-lumiere .t-nav-logo {
-      font-size: 10px; font-weight: 600; color: #3A2E28; letter-spacing: .12em;
-      font-style: italic;
-    }
-    .thumb-lumiere .t-nav-dot {
-      width: 22px; height: 2px; background: #C9A97E;
-    }
-    .thumb-lumiere .t-hero {
-      height: 90px; background: linear-gradient(rgba(254,252,249,.15),rgba(254,252,249,.15)),
-      url('https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=400&q=60') center/cover;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-    }
-    .thumb-lumiere .t-hero-title {
-      font-size: 14px; font-weight: 300; color: #FEFCF9; letter-spacing: .2em; text-align: center;
-      font-style: italic;
-    }
-    .thumb-lumiere .t-hero-sub {
-      font-size: 8px; color: #C9A97E; letter-spacing: .2em; text-transform: uppercase;
-    }
-
-    /* Durand Menuiserie, ivoire / brun / ocre */
-    .thumb-menuiserie {
-      background: #F7F3EE;
-    }
-    .thumb-menuiserie .t-nav {
-      height: 32px; background: #2B1F14; border-bottom: 3px solid #C68B1F;
-      display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
-    }
-    .thumb-menuiserie .t-nav-logo {
-      font-size: 9px; font-weight: 700; color: #F7F3EE; letter-spacing: .1em; text-transform: uppercase;
-    }
-    .thumb-menuiserie .t-nav-cta {
-      font-size: 7px; font-weight: 700; color: #2B1F14; background: #C68B1F;
-      padding: 3px 7px; letter-spacing: .06em; text-transform: uppercase;
-    }
-    .thumb-menuiserie .t-hero {
-      height: 90px; background: #2B1F14;
-      display: flex; flex-direction: column; justify-content: center; padding: 0 14px; gap: 4px;
-    }
-    .thumb-menuiserie .t-hero-num { display: none; }
-    .thumb-menuiserie .t-hero-label {
-      font-size: 7px; color: #C68B1F; letter-spacing: .2em; text-transform: uppercase;
-    }
-    .thumb-menuiserie .t-hero-title {
-      font-size: 13px; font-weight: 700; color: #F7F3EE; text-transform: uppercase; letter-spacing: .06em;
-    }
-
-    /* Supprimer les blocs gris placeholder dans les thumbnails */
-    /* Étendre le hero pour remplir la hauteur */
-    .thumb-bistrot .t-hero,
-    .thumb-lumiere .t-hero,
-    .thumb-menuiserie .t-hero { flex: 1; height: auto; min-height: 120px; }
-
-    /* Card info */
-    .card-info { padding: 20px 24px; }
-    .card-sector {
-      font-size: 10px; font-weight: 700; color: var(--accent);
-      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;
-    }
-    .card-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
-    .card-desc { color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 18px; }
-    .card-footer {
-      display: flex; align-items: center; justify-content: space-between;
-      padding-top: 16px; border-top: 1px solid var(--border);
-    }
-    .card-ville {
-      font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px;
-    }
-    .card-voir {
-      font-size: 12px; font-weight: 700; color: var(--accent);
-      text-decoration: none; letter-spacing: .05em;
-      display: flex; align-items: center; gap: 4px; transition: gap .2s;
-    }
-    .card-voir:hover { gap: 8px; }
-
-    @media (max-width: 900px) {
-      .realisations-grid { grid-template-columns: 1fr; }
+    @media (prefers-reduced-motion: reduce) {
+      .realisation-card, .card-iframe, .card-reveal, .card-cta [data-lucide] { transition: none; }
     }
 
     /* CONTACT */
@@ -698,14 +639,60 @@
 </head>
 <body>
 <div class="light-bg" aria-hidden="true">
-  <div class="light-ray light-ray-1"></div>
-  <div class="light-ray light-ray-2"></div>
-  <div class="light-ray light-ray-3"></div>
-  <div class="light-ray light-ray-4"></div>
-  <div class="light-orb light-orb-1"></div>
-  <div class="light-orb light-orb-2"></div>
-  <div class="light-orb light-orb-3"></div>
-  <div class="noise-overlay"></div>
+  <div class="cursor-spotlight"></div>
+
+  <svg class="light-trails" viewBox="0 0 1920 8000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- TRAÎNÉE 1 : ROSE/MAGENTA — haut de page -->
+    <path class="trail-outer trail-1-outer"
+          d="M -200,800 C 400,400 1000,1600 1600,1000 C 2200,400 1400,2200 800,2400 C 200,2600 -300,1800 200,2800 C 700,3800 1500,3200 2100,3600"
+          stroke="#ec4899" stroke-width="60" fill="none" opacity="0.15" stroke-linecap="round"/>
+    <path class="trail-mid trail-1-mid"
+          d="M -200,800 C 400,400 1000,1600 1600,1000 C 2200,400 1400,2200 800,2400 C 200,2600 -300,1800 200,2800 C 700,3800 1500,3200 2100,3600"
+          stroke="#f472b6" stroke-width="14" fill="none" opacity="0.7" stroke-linecap="round"/>
+    <path class="trail-core trail-1-core"
+          d="M -200,800 C 400,400 1000,1600 1600,1000 C 2200,400 1400,2200 800,2400 C 200,2600 -300,1800 200,2800 C 700,3800 1500,3200 2100,3600"
+          stroke="#ffffff" stroke-width="3" fill="none" opacity="1" stroke-linecap="round"/>
+
+    <!-- TRAÎNÉE 2 : VIOLET/INDIGO — milieu de page -->
+    <path class="trail-outer trail-2-outer"
+          d="M 2100,3200 C 1500,3600 500,2800 -100,3400 C -700,4000 800,4800 1400,4600 C 2000,4400 2400,5200 1800,5400 C 1200,5600 400,5000 -200,5600"
+          stroke="#8b5cf6" stroke-width="60" fill="none" opacity="0.15" stroke-linecap="round"/>
+    <path class="trail-mid trail-2-mid"
+          d="M 2100,3200 C 1500,3600 500,2800 -100,3400 C -700,4000 800,4800 1400,4600 C 2000,4400 2400,5200 1800,5400 C 1200,5600 400,5000 -200,5600"
+          stroke="#a78bfa" stroke-width="14" fill="none" opacity="0.7" stroke-linecap="round"/>
+    <path class="trail-core trail-2-core"
+          d="M 2100,3200 C 1500,3600 500,2800 -100,3400 C -700,4000 800,4800 1400,4600 C 2000,4400 2400,5200 1800,5400 C 1200,5600 400,5000 -200,5600"
+          stroke="#ffffff" stroke-width="3" fill="none" opacity="1" stroke-linecap="round"/>
+
+    <!-- TRAÎNÉE 3 : VIOLET-ROSE — bas de page -->
+    <path class="trail-outer trail-3-outer"
+          d="M -200,6200 C 600,5800 1400,6800 2000,6400 C 2400,6100 1800,7200 1200,7000 C 600,6800 -200,7400 400,7800 C 1000,8100 1800,7800 2100,8400"
+          stroke="#c026d3" stroke-width="60" fill="none" opacity="0.15" stroke-linecap="round"/>
+    <path class="trail-mid trail-3-mid"
+          d="M -200,6200 C 600,5800 1400,6800 2000,6400 C 2400,6100 1800,7200 1200,7000 C 600,6800 -200,7400 400,7800 C 1000,8100 1800,7800 2100,8400"
+          stroke="#e879f9" stroke-width="14" fill="none" opacity="0.7" stroke-linecap="round"/>
+    <path class="trail-core trail-3-core"
+          d="M -200,6200 C 600,5800 1400,6800 2000,6400 C 2400,6100 1800,7200 1200,7000 C 600,6800 -200,7400 400,7800 C 1000,8100 1800,7800 2100,8400"
+          stroke="#ffffff" stroke-width="3" fill="none" opacity="1" stroke-linecap="round"/>
+  </svg>
+
+  <div class="sparkles">
+    <span class="sparkle" style="top:8%;left:20%"></span>
+    <span class="sparkle" style="top:14%;left:70%"></span>
+    <span class="sparkle" style="top:22%;left:45%"></span>
+    <span class="sparkle" style="top:31%;left:85%"></span>
+    <span class="sparkle" style="top:38%;left:15%"></span>
+    <span class="sparkle" style="top:45%;left:60%"></span>
+    <span class="sparkle" style="top:52%;left:30%"></span>
+    <span class="sparkle" style="top:58%;left:78%"></span>
+    <span class="sparkle" style="top:65%;left:10%"></span>
+    <span class="sparkle" style="top:71%;left:55%"></span>
+    <span class="sparkle" style="top:78%;left:90%"></span>
+    <span class="sparkle" style="top:84%;left:35%"></span>
+    <span class="sparkle" style="top:91%;left:68%"></span>
+    <span class="sparkle" style="top:96%;left:22%"></span>
+  </div>
 </div>
 
   <!-- NAV -->
@@ -869,87 +856,120 @@
   </section>
 
   <!-- RÉALISATIONS -->
-  <section id="realisations">
-    <div class="section-inner">
-      <div class="section-header animate">
-        <span class="section-tag">Réalisations</span>
-        <h2 class="section-title">Exemples de sites<br>créés</h2>
-      </div>
-      <div class="realisations-grid animate">
+  <section id="realisations" class="realisations-section">
+    <div class="realisations-header animate">
+      <span class="section-label">Réalisations</span>
+      <h2>Exemples de sites créés</h2>
+      <p class="section-subtitle">Chaque métier a son identité. On conçoit des sites qui la respectent et la subliment.</p>
+    </div>
 
-        <!-- Carte 1, Le Bistrot du Marché -->
-        <div class="realisation-card">
-          <div class="card-thumb thumb-bistrot" onclick="window.open('https://sa-demo-le-bistrot-du-marche.vercel.app','_blank')">
-            <div class="t-nav">
-              <span class="t-nav-logo">LE BISTROT DU MARCHÉ</span>
-            </div>
-            <div class="t-hero">
-              <div class="t-hero-title">Une cuisine du marché,<br>faite maison</div>
-              <div class="t-hero-sub">Paris · Bistrot traditionnel</div>
-            </div>
-            
+    <div class="realisations-grid">
+
+      <!-- CARD 1 : LE BISTROT DU MARCHÉ -->
+      <article class="realisation-card animate" data-category="restauration">
+        <div class="card-preview">
+          <div class="card-iframe-wrapper">
+            <iframe src="/realisations/le-bistrot-du-marche/index.html" class="card-iframe" loading="lazy" title="Aperçu Le Bistrot du Marché" scrolling="no" tabindex="-1"></iframe>
+            <div class="card-iframe-overlay"></div>
           </div>
-          <div class="card-info">
-            <div class="card-sector">Restauration</div>
-            <div class="card-name">Le Bistrot du Marché</div>
-            <p class="card-desc">Restaurant parisien traditionnel. Menu carte imprimée, galerie, avis clients, réservation.</p>
-            <div class="card-footer">
-              <span class="card-ville"><i data-lucide="map-pin"></i>Paris 3e</span>
-              <a href="https://sa-demo-le-bistrot-du-marche.vercel.app" class="card-voir" target="_blank">Voir le site →</a>
-            </div>
-          </div>
+          <div class="card-badge"><i data-lucide="utensils-crossed"></i><span>Restauration</span></div>
         </div>
-
-        <!-- Carte 2, Maison Lumière -->
-        <div class="realisation-card">
-          <div class="card-thumb thumb-lumiere" onclick="window.open('https://sa-demo-maison-lumiere.vercel.app','_blank')">
-            <div class="t-nav">
-              <span class="t-nav-logo">Maison Lumière</span>
-              <div class="t-nav-dot"></div>
-            </div>
-            <div class="t-hero">
-              <div class="t-hero-title">L'art du cheveu,<br>sublimé</div>
-              <div class="t-hero-sub">Bordeaux · Salon luxe</div>
-            </div>
-            
+        <div class="card-content">
+          <div class="card-main">
+            <h3 class="card-title">Le Bistrot du Marché</h3>
+            <p class="card-desc">Bistrot parisien traditionnel. Menu carte imprimée, galerie, avis clients, réservation en ligne.</p>
+            <div class="card-meta"><span class="card-location"><i data-lucide="map-pin"></i>Paris 3ème</span></div>
           </div>
-          <div class="card-info">
-            <div class="card-sector">Beauté & Bien-être</div>
-            <div class="card-name">Maison Lumière</div>
+          <div class="card-reveal">
+            <div class="reveal-section">
+              <span class="reveal-label">Direction artistique</span>
+              <span class="reveal-value">Éditorial gastronomique</span>
+            </div>
+            <div class="reveal-section">
+              <span class="reveal-label">Fonctionnalités</span>
+              <ul class="reveal-list"><li>Menu interactif</li><li>Galerie photos</li><li>Réservation en ligne</li><li>Avis clients</li><li>Plan d'accès</li></ul>
+            </div>
+            <div class="reveal-section">
+              <span class="reveal-label">Optimisations</span>
+              <span class="reveal-value">SEO local, Schema Restaurant, Google Business ready</span>
+            </div>
+          </div>
+          <a href="/realisations/le-bistrot-du-marche/" target="_blank" rel="noopener noreferrer" class="card-cta">
+            <span>Voir le site</span><i data-lucide="arrow-up-right"></i>
+          </a>
+        </div>
+      </article>
+
+      <!-- CARD 2 : MAISON LUMIÈRE -->
+      <article class="realisation-card animate delay-1" data-category="beaute">
+        <div class="card-preview">
+          <div class="card-iframe-wrapper">
+            <iframe src="/realisations/maison-lumiere/index.html" class="card-iframe" loading="lazy" title="Aperçu Maison Lumière" scrolling="no" tabindex="-1"></iframe>
+            <div class="card-iframe-overlay"></div>
+          </div>
+          <div class="card-badge"><i data-lucide="sparkles"></i><span>Beauté & Bien-être</span></div>
+        </div>
+        <div class="card-content">
+          <div class="card-main">
+            <h3 class="card-title">Maison Lumière</h3>
             <p class="card-desc">Salon de coiffure haut de gamme. Prestations luxe, galerie masonry, réservation en ligne.</p>
-            <div class="card-footer">
-              <span class="card-ville"><i data-lucide="map-pin"></i>Bordeaux</span>
-              <a href="https://sa-demo-maison-lumiere.vercel.app" class="card-voir" target="_blank">Voir le site →</a>
+            <div class="card-meta"><span class="card-location"><i data-lucide="map-pin"></i>Paris 8ème</span></div>
+          </div>
+          <div class="card-reveal">
+            <div class="reveal-section">
+              <span class="reveal-label">Direction artistique</span>
+              <span class="reveal-value">Luxe sensoriel, inspiration couture</span>
+            </div>
+            <div class="reveal-section">
+              <span class="reveal-label">Fonctionnalités</span>
+              <ul class="reveal-list"><li>Grille de prestations</li><li>Équipe et bios</li><li>Galerie masonry</li><li>Prise de RDV</li><li>Intégration Instagram</li></ul>
+            </div>
+            <div class="reveal-section">
+              <span class="reveal-label">Optimisations</span>
+              <span class="reveal-value">Animations au scroll, SEO local, Schema BeautySalon</span>
             </div>
           </div>
+          <a href="/realisations/maison-lumiere/" target="_blank" rel="noopener noreferrer" class="card-cta">
+            <span>Voir le site</span><i data-lucide="arrow-up-right"></i>
+          </a>
         </div>
+      </article>
 
-        <!-- Carte 3, Durand Menuiserie -->
-        <div class="realisation-card">
-          <div class="card-thumb thumb-menuiserie" onclick="window.open('https://sa-demo-durand-menuiserie.vercel.app','_blank')">
-            <div class="t-nav">
-              <span class="t-nav-logo">DURAND <span style="color:#C68B1F">MENUISERIE</span></span>
-              <div class="t-nav-cta">DEVIS</div>
-            </div>
-            <div class="t-hero" style="position:relative">
-              <div class="t-hero-num">62</div>
-              <div class="t-hero-label">Rennes · depuis 1962</div>
-              <div class="t-hero-title">MENUISERIE ARTISANALE</div>
-            </div>
-            
+      <!-- CARD 3 : DURAND MENUISERIE -->
+      <article class="realisation-card animate delay-2" data-category="artisanat">
+        <div class="card-preview">
+          <div class="card-iframe-wrapper">
+            <iframe src="/realisations/durand-menuiserie/index.html" class="card-iframe" loading="lazy" title="Aperçu Durand Menuiserie" scrolling="no" tabindex="-1"></iframe>
+            <div class="card-iframe-overlay"></div>
           </div>
-          <div class="card-info">
-            <div class="card-sector">Artisanat & Bâtiment</div>
-            <div class="card-name">Durand Menuiserie</div>
+          <div class="card-badge"><i data-lucide="hammer"></i><span>Artisanat & Bâtiment</span></div>
+        </div>
+        <div class="card-content">
+          <div class="card-main">
+            <h3 class="card-title">Durand Menuiserie</h3>
             <p class="card-desc">Menuisier artisan 3e génération. Cuisines, escaliers, terrasses. Timeline historique, certifications.</p>
-            <div class="card-footer">
-              <span class="card-ville"><i data-lucide="map-pin"></i>Rennes</span>
-              <a href="https://sa-demo-durand-menuiserie.vercel.app" class="card-voir" target="_blank">Voir le site →</a>
+            <div class="card-meta"><span class="card-location"><i data-lucide="map-pin"></i>Rennes</span></div>
+          </div>
+          <div class="card-reveal">
+            <div class="reveal-section">
+              <span class="reveal-label">Direction artistique</span>
+              <span class="reveal-value">Artisan robuste, authentique</span>
+            </div>
+            <div class="reveal-section">
+              <span class="reveal-label">Fonctionnalités</span>
+              <ul class="reveal-list"><li>Timeline historique</li><li>Catalogue de services</li><li>Galerie de réalisations</li><li>Formulaire de devis</li><li>Certifications affichées</li></ul>
+            </div>
+            <div class="reveal-section">
+              <span class="reveal-label">Optimisations</span>
+              <span class="reveal-value">SEO zone de chalandise, Schema LocalBusiness, NAP</span>
             </div>
           </div>
+          <a href="/realisations/durand-menuiserie/" target="_blank" rel="noopener noreferrer" class="card-cta">
+            <span>Voir le site</span><i data-lucide="arrow-up-right"></i>
+          </a>
         </div>
+      </article>
 
-      </div>
     </div>
   </section>
 
@@ -1012,7 +1032,34 @@
     document.querySelectorAll('.animate').forEach(el => observer.observe(el));
 
   </script>
+  <script>
+    document.querySelectorAll('.realisation-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.card-cta')) return;
+        const cta = card.querySelector('.card-cta');
+        if (cta) window.open(cta.href, '_blank', 'noopener,noreferrer');
+      });
+    });
+  </script>
   <script>lucide.createIcons();</script>
+  <script>
+    (function() {
+      const spotlight = document.querySelector('.cursor-spotlight');
+      if (!spotlight) return;
+      let mouseX = 0, mouseY = 0, currentX = 0, currentY = 0;
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX; mouseY = e.clientY;
+        spotlight.style.opacity = '1';
+      });
+      document.addEventListener('mouseleave', () => { spotlight.style.opacity = '0'; });
+      (function animate() {
+        currentX += (mouseX - currentX) * 0.15;
+        currentY += (mouseY - currentY) * 0.15;
+        spotlight.style.transform = `translate(${currentX - 300}px, ${currentY - 300}px)`;
+        requestAnimationFrame(animate);
+      })();
+    })();
+  </script>
 
 </body>
 </html>
